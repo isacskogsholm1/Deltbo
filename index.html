@@ -324,8 +324,12 @@
         <label for="memberName">Fornavn</label>
         <input id="memberName" name="memberName" placeholder="f.eks. Maria" autocomplete="name" required />
         <input id="memberRoom" name="memberRoom" class="hidden" />
+        <label for="memberUsername">Lag brukernavn</label>
+        <input id="memberUsername" name="memberUsername" placeholder="f.eks. maria" autocomplete="username" required />
+        <label for="memberPassword">Lag passord</label>
+        <input id="memberPassword" name="memberPassword" type="password" placeholder="Minst 4 tegn" autocomplete="new-password" minlength="4" required />
         <p id="joinError" class="small error" role="alert"></p>
-        <button class="btn" type="submit">Gå inn som medlem</button>
+        <button class="btn" type="submit">Lag bruker og gå inn</button>
       </form>
     </main>
   </section>
@@ -562,7 +566,7 @@
     <form id="loginForm" class="card">
       <button class="close" type="button" data-action="close-login">×</button>
       <h2 id="loginTitle">Login</h2>
-      <p>Logg inn som admin eller intern Deltbo-bruker.</p>
+      <p>Logg inn som admin, medlem eller intern Deltbo-bruker.</p>
       <input id="loginUser" placeholder="Brukernavn" autocomplete="username" />
       <input id="loginPass" type="password" placeholder="Passord" autocomplete="current-password" />
       <button class="btn" type="submit">Login</button>

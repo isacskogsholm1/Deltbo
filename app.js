@@ -154,8 +154,8 @@ function handleClick(event) {
 
   const id = actionButton.dataset.id;
   const itemActions = {
-    "toggle-expense": () => updateById("expenses", id, (item) => ({ ...item, settled: !item.settled })),
-    "delete-expense": () => removeById("expenses", id, "Utgift fjernet"),
+    "toggle-expense": () => toggleExpense(id),
+    "delete-expense": () => deleteExpense(id),
     "done-clean": () => updateById("cleaning", id, (item) => ({ ...item, done: !item.done })),
     "delete-clean": () => removeById("cleaning", id, "Oppgave fjernet"),
     "toggle-shop": () => updateById("shopping", id, (item) => ({ ...item, done: !item.done })),
@@ -220,6 +220,7 @@ function normalizeState(savedState) {
       title: expense.title ?? "Utgift",
       amount: Number(expense.amount ?? 0),
       paidBy: expense.paidBy ?? members[0]?.name ?? "Admin",
+      createdBy: expense.createdBy ?? expense.paidBy ?? members[0]?.name ?? "Admin",
       settled: Boolean(expense.settled),
       receipt: normalizeReceipt(expense.receipt),
       createdAt: expense.createdAt ?? isoNow(),
@@ -249,8 +250,16 @@ function normalizeState(savedState) {
 
 function normalizeMembers(members) {
   const list = normalizeCollection(members, (member) => typeof member === "string"
-    ? { id: uid(), name: member, room: "", role: "member", joinedAt: isoNow() }
-    : { id: member.id ?? uid(), name: member.name ?? "Beboer", room: member.room ?? "", role: member.role ?? "member", joinedAt: member.joinedAt ?? isoNow() });
+    ? { id: uid(), name: member, room: "", role: "member", username: "", password: "", joinedAt: isoNow() }
+    : {
+        id: member.id ?? uid(),
+        name: member.name ?? "Beboer",
+        room: member.room ?? "",
+        role: member.role ?? "member",
+        username: member.username ?? "",
+        password: member.password ?? "",
+        joinedAt: member.joinedAt ?? isoNow(),
+      });
 
   return list.length ? list : structuredCloneSafe(demoData.members);
 }
@@ -360,7 +369,10 @@ function showJoin(inviteToken) {
   $("joinIntro").textContent = isValidInvite
     ? `Du er invitert til ${state.home.name}. Skriv fornavnet ditt for å åpne dashboardet.`
     : "Denne invitasjonslinken er ugyldig eller finnes ikke på denne enheten.";
-  if (invitedName) $("memberName").value = invitedName;
+  if (invitedName) {
+    $("memberName").value = invitedName;
+    $("memberUsername").value = firstName(invitedName);
+  }
   $("joinForm").querySelector("button").disabled = !isValidInvite;
   view("join");
 }
@@ -722,8 +734,15 @@ function joinHome(event) {
 
   const memberName = value("memberName");
   const room = value("memberRoom");
+  const username = value("memberUsername").toLowerCase();
+  const password = $("memberPassword").value;
   if (!memberName) {
     $("joinError").textContent = "Skriv inn navnet ditt for å bli med.";
+    return;
+  }
+
+  if (!username || password.length < 4) {
+    $("joinError").textContent = "Lag brukernavn og passord på minst 4 tegn.";
     return;
   }
 
@@ -734,6 +753,11 @@ function joinHome(event) {
   }
 
   const invitedMember = findMemberByFirstName(memberName);
+  if (isUsernameTaken(username, invitedMember?.id)) {
+    $("joinError").textContent = "Brukernavnet er allerede i bruk i dette kollektivet.";
+    return;
+  }
+
   if (!invitedMember && state.members.some((member) => member.role !== "admin")) {
     $("joinError").textContent = "Du må skrive samme fornavn som admin inviterte.";
     return;
@@ -747,8 +771,10 @@ function joinHome(event) {
     return;
   }
 
-  saveSession({ role: "member", memberName: invitedMember?.name || memberName });
-  saveState("Velkommen inn");
+  const accountName = invitedMember?.name || memberName;
+  setMemberCredentials(accountName, username, password);
+  saveSession({ role: "member", memberName: accountName, username });
+  saveState("Bruker lagret. Velkommen inn");
   openDashboard("member");
 }
 
@@ -768,15 +794,24 @@ function login(event) {
   }
 
   const isValidAdmin = value("loginUser") === state.home.adminUser && $("loginPass").value === state.home.adminPass;
-  if (!isValidAdmin) {
+  if (isValidAdmin) {
+    saveSession({ role: "admin", memberName: state.home.adminUser, username: state.home.adminUser });
+    closeLogin();
+    openDashboard("admin");
+    showToast("Logget inn som admin");
+    return;
+  }
+
+  const member = state.members.find((item) => item.username?.toLowerCase() === value("loginUser").toLowerCase() && item.password === $("loginPass").value);
+  if (!member) {
     $("loginError").textContent = "Feil brukernavn eller passord.";
     return;
   }
 
-  saveSession({ role: "admin", memberName: state.home.adminUser });
+  saveSession({ role: "member", memberName: member.name, username: member.username });
   closeLogin();
-  openDashboard("admin");
-  showToast("Logget inn som admin");
+  openDashboard("member");
+  showToast("Logget inn som medlem");
 }
 
 function logout() {
@@ -933,6 +968,22 @@ function upsertMember(name, room = "") {
   return { ok: true };
 }
 
+function setMemberCredentials(name, username, password) {
+  const member = state.members.find((item) => item.name.toLowerCase() === name.toLowerCase());
+  if (!member) return;
+
+  member.username = username;
+  member.password = password;
+  member.accountCreatedAt = member.accountCreatedAt || isoNow();
+}
+
+function isUsernameTaken(username, allowedMemberId = "") {
+  const normalized = username.toLowerCase();
+  return state.members.some((member) => member.username?.toLowerCase() === normalized && member.id !== allowedMemberId)
+    || state.home?.adminUser?.toLowerCase() === normalized
+    || SUPER_ADMIN.username === normalized;
+}
+
 function findMemberByFirstName(name) {
   const target = firstName(name);
   return state.members.find((member) => member.role !== "admin" && firstName(member.name) === target);
@@ -968,6 +1019,7 @@ async function addExpense(event) {
     title,
     amount,
     paidBy: value("expensePaidBy") || currentUserName(),
+    createdBy: currentUserName(),
     settled: false,
     receipt,
     createdAt: isoNow(),
@@ -1112,7 +1164,7 @@ function quickAdd(event) {
 
   if (type === "shopping") state.shopping.push({ id: uid(), item: text, quantity: "", done: false, receipt: null });
   if (type === "message") state.messages.unshift({ id: uid(), text, author: currentUserName(), createdAt: isoNow() });
-  if (type === "expense") state.expenses.unshift({ id: uid(), title: text, amount: Number(value("quickAmount") || 0), paidBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
+  if (type === "expense") state.expenses.unshift({ id: uid(), title: text, amount: Number(value("quickAmount") || 0), paidBy: currentUserName(), createdBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
   if (type === "task") state.cleaning.push({ id: uid(), title: text, assignee: currentUserName(), dueDate: todayPlus(7), done: false });
 
   clearFields("quickText", "quickAmount");
@@ -1123,6 +1175,30 @@ function quickAdd(event) {
 function updateById(collection, id, update) {
   state[collection] = state[collection].map((item) => item.id === id ? update(item) : item);
   saveState("Oppdatert");
+}
+
+function toggleExpense(id) {
+  const expense = state.expenses.find((item) => item.id === id);
+  if (!expense) return;
+
+  if (expense.createdBy !== currentUserName()) {
+    showToast(`Kun ${expense.createdBy} kan ${expense.settled ? "åpne" : "lukke"} dette beløpet`);
+    return;
+  }
+
+  updateById("expenses", id, (item) => ({ ...item, settled: !item.settled }));
+}
+
+function deleteExpense(id) {
+  const expense = state.expenses.find((item) => item.id === id);
+  if (!expense) return;
+
+  if (expense.createdBy !== currentUserName()) {
+    showToast(`Kun ${expense.createdBy} kan slette dette beløpet`);
+    return;
+  }
+
+  removeById("expenses", id, "Utgift fjernet");
 }
 
 function removeById(collection, id, message) {
@@ -1279,7 +1355,7 @@ function renderHome() {
 function renderMembers() {
   $("memberList").innerHTML = state.members.map((member) => row({
     title: member.name,
-    meta: `${member.role === "admin" ? "Admin" : "Invitert medlem"}${member.room ? ` • ${member.room}` : ""}`,
+    meta: `${member.role === "admin" ? "Admin" : "Invitert medlem"}${member.room ? ` • ${member.room}` : ""}${member.role !== "admin" ? ` • ${member.username ? "konto opprettet" : "venter på konto"}` : ""}`,
     actions: member.role === "admin"
       ? badge("Admin")
       : button("copy-member-invite", member.id, "Kopier invitasjon", "secondary"),
@@ -1289,8 +1365,8 @@ function renderMembers() {
 function renderExpenses() {
   $("expenseList").innerHTML = emptyOrRows(state.expenses, (expense) => row({
     title: `${expense.title} • ${expense.amount} kr`,
-    meta: `Betalt av ${expense.paidBy} • ${expense.settled ? "gjort opp" : "venter"} • ${expense.receipt ? `kvittering: ${expense.receipt.name}` : "ingen kvittering"}`,
-    actions: `${receiptLink(expense.receipt)}${button("toggle-expense", expense.id, expense.settled ? "Åpne" : "Gjør opp", "secondary")}${button("delete-expense", expense.id, "Slett", "danger")}`,
+    meta: `Betalt av ${expense.paidBy} • åpnet av ${expense.createdBy} • ${expense.settled ? "lukket" : "venter"} • ${expense.receipt ? `kvittering: ${expense.receipt.name}` : "ingen kvittering"}`,
+    actions: `${receiptLink(expense.receipt)}${expense.createdBy === currentUserName() ? `${button("toggle-expense", expense.id, expense.settled ? "Åpne igjen" : "Lukk beløp", "secondary")}${button("delete-expense", expense.id, "Slett", "danger")}` : badge(`Lukkes av ${expense.createdBy}`)}`,
   }), "Ingen utgifter enda.");
 }
 
