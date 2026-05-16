@@ -1174,6 +1174,7 @@ label {
   .features,
   .cards,
   .field-grid,
+  .module-grid,
   .payment-options {
     grid-template-columns: 1fr;
   }
@@ -1261,7 +1262,8 @@ label {
   .actions,
   .topbar,
   .inline-actions,
-  .input-row {
+  .input-row,
+  .notification-head {
     align-items: stretch;
     flex-direction: column;
   }
@@ -1764,6 +1766,79 @@ body {
   border-radius: 14px;
 }
 
+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.module-grid .checkline {
+  margin: 0;
+  align-items: center;
+  min-height: 56px;
+}
+
+.checkline.locked {
+  color: var(--muted);
+}
+
+.notification-center {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid var(--dash-line);
+  border-radius: 20px;
+  background: var(--dash-surface);
+  box-shadow: var(--dash-shadow);
+}
+
+.notification-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.notification-head h3 {
+  margin: 0 0 4px;
+}
+
+.notification-row {
+  border-left: 5px solid #9fca8a;
+}
+
+.notification-row.priority-important,
+.notification-row.priority-critical {
+  border-left-color: #ffb84d;
+  background: #fff8ec;
+}
+
+.notification-row.priority-critical {
+  border-left-color: #ff5f5f;
+}
+
+.notification-row.is-read {
+  opacity: .72;
+}
+
+.history-row {
+  border-left: 5px solid #75c22a;
+}
+
+.calendar-row {
+  border-left: 5px solid #62a0ff;
+}
+
+.module-disabled {
+  display: none !important;
+}
+
 body[data-theme="dark"] {
   --bg: #090b10;
   --panel: #111821;
@@ -1896,6 +1971,20 @@ body[data-theme="dark"] .dashboard-app .menu button:hover {
   background: #182331;
   border-color: #2c3b4d;
   color: #ffffff;
+}
+
+body[data-theme="dark"] .notification-center {
+  background: #101720;
+  border-color: var(--dash-line);
+}
+
+body[data-theme="dark"] .notification-row.priority-important,
+body[data-theme="dark"] .notification-row.priority-critical {
+  background: #1f1a13;
+}
+
+body[data-theme="dark"] .notification-row.priority-critical {
+  background: #221316;
 }
 
 @media (prefers-reduced-motion: reduce) {

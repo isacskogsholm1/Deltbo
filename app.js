@@ -10,6 +10,33 @@ const LEGACY_COLLECTIVES_KEY = `${LEGACY_PREFIX}Collectives`;
 const LEGACY_CONTACTS_KEY = `${LEGACY_PREFIX}ContactRequests`;
 const PRICE_NOK = 99;
 const SUPER_ADMIN = { username: "deltbo", password: "support99" };
+const DEFAULT_MODULES = {
+  expenses: true,
+  cleaning: true,
+  shopping: true,
+  calendar: true,
+  rules: true,
+  inventory: true,
+  contacts: true,
+  conflict: true,
+};
+const MODULE_LABELS = {
+  expenses: "Utgifter",
+  cleaning: "Rengjøring",
+  shopping: "Handleliste",
+  calendar: "Kalender",
+  rules: "Husregler",
+  inventory: "Inventar",
+  contacts: "Kontakter",
+  conflict: "Saker",
+};
+const DEFAULT_NOTIFICATIONS = {
+  shopping: false,
+  expenses: true,
+  cleaning: true,
+  messages: true,
+};
+const ALWAYS_ON_NOTIFICATIONS = ["rent", "crisis"];
 
 const storageAdapter = {
   loadAppState: () => safeJson(localStorage.getItem(STORAGE_KEY)) ?? safeJson(localStorage.getItem(LEGACY_STORAGE_KEY)),
@@ -59,6 +86,13 @@ const demoData = {
     { id: uid(), name: "Legevakt", value: "116 117" },
   ],
   conflicts: [],
+  modules: DEFAULT_MODULES,
+  notificationSettings: DEFAULT_NOTIFICATIONS,
+  notifications: [
+    { id: uid(), type: "rent", priority: "important", title: "Husleie", text: "Viktige betalingsvarsler ligger alltid nederst i appen.", createdAt: isoNow(), read: false },
+    { id: uid(), type: "crisis", priority: "critical", title: "Krise/brannalarm", text: "Kritiske varsler kan ikke skrus av.", createdAt: isoNow(), read: false },
+  ],
+  history: [],
 };
 
 let state = normalizeState(storageAdapter.loadAppState());
@@ -177,6 +211,8 @@ function handleClick(event) {
     "delete-support": () => deleteCollective(id),
     "resolve-contact": () => resolveContactRequest(id),
     "delete-contact-request": () => deleteContactRequest(id),
+    "read-notification": () => markNotificationRead(id),
+    "clear-notifications": () => clearReadNotifications(),
   };
 
   itemActions[action]?.();
@@ -226,6 +262,8 @@ function normalizeState(savedState) {
       paidBy: expense.paidBy ?? members[0]?.name ?? "Admin",
       createdBy: expense.createdBy ?? expense.paidBy ?? members[0]?.name ?? "Admin",
       settled: Boolean(expense.settled),
+      settledAt: expense.settledAt ?? "",
+      settledBy: expense.settledBy ?? "",
       receipt: normalizeReceipt(expense.receipt),
       createdAt: expense.createdAt ?? isoNow(),
     })),
@@ -249,7 +287,37 @@ function normalizeState(savedState) {
     conflicts: normalizeCollection(merged.conflicts, (item) => typeof item === "string"
       ? { id: uid(), text: item, resolved: false, createdAt: isoNow() }
       : { id: item.id ?? uid(), text: item.text ?? "", resolved: Boolean(item.resolved), createdAt: item.createdAt ?? isoNow() }),
+    modules: normalizeModules(merged.modules),
+    notificationSettings: normalizeNotificationSettings(merged.notificationSettings),
+    notifications: normalizeCollection(merged.notifications, (item) => ({
+      id: item.id ?? uid(),
+      type: item.type ?? "messages",
+      priority: item.priority ?? "normal",
+      title: item.title ?? "Varsel",
+      text: item.text ?? "",
+      createdAt: item.createdAt ?? isoNow(),
+      read: Boolean(item.read),
+    })),
+    history: normalizeCollection(merged.history, (item) => ({
+      id: item.id ?? uid(),
+      expenseId: item.expenseId ?? "",
+      title: item.title ?? "Oppgjor",
+      amount: Number(item.amount ?? 0),
+      paidBy: item.paidBy ?? "",
+      openedBy: item.openedBy ?? item.createdBy ?? "",
+      closedBy: item.closedBy ?? "",
+      closedAt: item.closedAt ?? item.createdAt ?? isoNow(),
+      receiptName: item.receiptName ?? "",
+    })),
   };
+}
+
+function normalizeModules(modules) {
+  return { ...DEFAULT_MODULES, ...(modules ?? {}) };
+}
+
+function normalizeNotificationSettings(settings) {
+  return { ...DEFAULT_NOTIFICATIONS, ...(settings ?? {}) };
 }
 
 function normalizeMembers(members) {
@@ -1028,6 +1096,7 @@ async function addExpense(event) {
     receipt,
     createdAt: isoNow(),
   });
+  addNotification("expenses", isImportantExpense(title) ? "important" : "normal", "Ny utgift", `${currentUserName()} la inn ${title} på ${amount} kr.`);
   clearFields("expenseTitle", "expenseAmount", "expenseReceipt");
   saveState("Utgift lagt til");
 }
@@ -1044,6 +1113,7 @@ function addCleaningTask(event) {
     dueDate: value("cleanDue") || todayPlus(7),
     done: false,
   });
+  addNotification("cleaning", "normal", "Ny oppgave", `${title} er lagt til i rengjøring/oppgaver.`);
   clearFields("cleanTitle", "cleanDue");
   saveState("Oppgave lagt til");
 }
@@ -1055,6 +1125,7 @@ async function addShoppingItem(event) {
   const receipt = await receiptFromFileInput("shopReceipt");
 
   state.shopping.push({ id: uid(), item, quantity: value("shopQuantity"), done: false, receipt });
+  addNotification("shopping", "low", "Handleliste", `${item} er lagt til på handlelisten.`);
   clearFields("shopItem", "shopQuantity", "shopReceipt");
   saveState("Vare lagt til");
 }
@@ -1089,6 +1160,7 @@ function addMessage() {
   if (!text) return;
 
   state.messages.unshift({ id: uid(), text, author: currentUserName(), createdAt: isoNow() });
+  addNotification("messages", "normal", "Ny beskjed", text);
   clearFields("messageText");
   saveState("Beskjed sendt");
 }
@@ -1099,6 +1171,7 @@ function addEvent(event) {
   if (!title) return;
 
   state.events.push({ id: uid(), title, date: value("eventDate") || todayPlus(7) });
+  addNotification(isImportantExpense(title) ? "rent" : "messages", isImportantExpense(title) ? "important" : "normal", "Kalender", `${title} er lagt til i kalenderen.`);
   clearFields("eventTitle", "eventDate");
   saveState("Hendelse lagt til");
 }
@@ -1139,6 +1212,7 @@ function addConflict(event) {
   if (!text) return;
 
   state.conflicts.unshift({ id: uid(), text, resolved: false, createdAt: isoNow() });
+  addNotification("crisis", "important", "Ny sak", "Det er sendt inn en ny anonym sak.");
   clearFields("conflictText");
   saveState("Anonym sak sendt");
 }
@@ -1157,6 +1231,8 @@ function saveSettings(event) {
     rentAmount: Number(value("settingsRent") || 0),
     roomCount: Number(value("settingsRooms") || 1),
   };
+  state.modules = readModuleSettings();
+  state.notificationSettings = readNotificationSettings();
   saveState("Innstillinger lagret");
 }
 
@@ -1166,10 +1242,23 @@ function quickAdd(event) {
   const text = value("quickText");
   if (!text) return;
 
-  if (type === "shopping") state.shopping.push({ id: uid(), item: text, quantity: "", done: false, receipt: null });
-  if (type === "message") state.messages.unshift({ id: uid(), text, author: currentUserName(), createdAt: isoNow() });
-  if (type === "expense") state.expenses.unshift({ id: uid(), title: text, amount: Number(value("quickAmount") || 0), paidBy: currentUserName(), createdBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
-  if (type === "task") state.cleaning.push({ id: uid(), title: text, assignee: currentUserName(), dueDate: todayPlus(7), done: false });
+  if (type === "shopping") {
+    state.shopping.push({ id: uid(), item: text, quantity: "", done: false, receipt: null });
+    addNotification("shopping", "low", "Handleliste", `${text} er lagt til på handlelisten.`);
+  }
+  if (type === "message") {
+    state.messages.unshift({ id: uid(), text, author: currentUserName(), createdAt: isoNow() });
+    addNotification("messages", "normal", "Ny beskjed", text);
+  }
+  if (type === "expense") {
+    const amount = Number(value("quickAmount") || 0);
+    state.expenses.unshift({ id: uid(), title: text, amount, paidBy: currentUserName(), createdBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
+    addNotification("expenses", isImportantExpense(text) ? "important" : "normal", "Ny utgift", `${currentUserName()} la inn ${text} på ${amount} kr.`);
+  }
+  if (type === "task") {
+    state.cleaning.push({ id: uid(), title: text, assignee: currentUserName(), dueDate: todayPlus(7), done: false });
+    addNotification("cleaning", "normal", "Ny oppgave", `${text} er lagt til i rengjøring/oppgaver.`);
+  }
 
   clearFields("quickText", "quickAmount");
   closeModal("quickAdd");
@@ -1190,7 +1279,14 @@ function toggleExpense(id) {
     return;
   }
 
-  updateById("expenses", id, (item) => ({ ...item, settled: !item.settled }));
+  const closedAt = expense.settled ? "" : archiveExpense(expense);
+
+  updateById("expenses", id, (item) => ({
+    ...item,
+    settled: !item.settled,
+    settledAt: item.settled ? "" : closedAt,
+    settledBy: item.settled ? "" : currentUserName(),
+  }));
 }
 
 function deleteExpense(id) {
@@ -1205,9 +1301,70 @@ function deleteExpense(id) {
   removeById("expenses", id, "Utgift fjernet");
 }
 
+function archiveExpense(expense) {
+  const closedAt = isoNow();
+  state.history.unshift({
+    id: uid(),
+    expenseId: expense.id,
+    title: expense.title,
+    amount: Number(expense.amount || 0),
+    paidBy: expense.paidBy,
+    openedBy: expense.createdBy,
+    closedBy: currentUserName(),
+    closedAt,
+    receiptName: expense.receipt?.name ?? "",
+  });
+  addNotification("expenses", "important", "Oppgjør lukket", `${expense.title} ble lukket av ${currentUserName()} og ligger i historikken.`);
+  return closedAt;
+}
+
+function markNotificationRead(id) {
+  state.notifications = state.notifications.map((item) => item.id === id ? { ...item, read: true } : item);
+  saveState("Varsel markert som lest");
+}
+
+function clearReadNotifications() {
+  state.notifications = state.notifications.filter((item) => !item.read || ALWAYS_ON_NOTIFICATIONS.includes(item.type));
+  saveState("Leste varsler ryddet");
+}
+
 function removeById(collection, id, message) {
   state[collection] = state[collection].filter((item) => item.id !== id);
   saveState(message);
+}
+
+function addNotification(type, priority, title, text) {
+  const required = ALWAYS_ON_NOTIFICATIONS.includes(type) || priority === "critical";
+  if (!required && !state.notificationSettings?.[type]) return;
+
+  state.notifications.unshift({
+    id: uid(),
+    type,
+    priority,
+    title,
+    text,
+    createdAt: isoNow(),
+    read: false,
+  });
+  state.notifications = state.notifications.slice(0, 60);
+}
+
+function isImportantExpense(text) {
+  return /husleie|leie|strøm|strom|krise|brann|alarm|depositum/i.test(text);
+}
+
+function readModuleSettings() {
+  return Object.fromEntries(Object.keys(DEFAULT_MODULES).map((moduleName) => {
+    const input = document.querySelector(`[data-module-setting="${moduleName}"]`);
+    return [moduleName, input ? input.checked : true];
+  }));
+}
+
+function readNotificationSettings() {
+  return Object.fromEntries(Object.keys(DEFAULT_NOTIFICATIONS).map((type) => {
+    const input = document.querySelector(`[data-notification-setting="${type}"]`);
+    return [type, input ? input.checked : DEFAULT_NOTIFICATIONS[type]];
+  }));
 }
 
 function getCollectives() {
@@ -1250,10 +1407,23 @@ function cleanCollectiveIssues(id) {
   }
 
   const cleaned = normalizeState(collective);
+  cleaned.expenses.filter((item) => !item.settled).forEach((expense) => {
+    cleaned.history.unshift({
+      id: uid(),
+      expenseId: expense.id,
+      title: expense.title,
+      amount: Number(expense.amount || 0),
+      paidBy: expense.paidBy,
+      openedBy: expense.createdBy,
+      closedBy: "Deltbo support",
+      closedAt: isoNow(),
+      receiptName: expense.receipt?.name ?? "",
+    });
+  });
   cleaned.conflicts = cleaned.conflicts.map((item) => ({ ...item, resolved: true }));
   cleaned.shopping = cleaned.shopping.filter((item) => !item.done);
   cleaned.cleaning = cleaned.cleaning.filter((item) => !item.done);
-  cleaned.expenses = cleaned.expenses.map((item) => ({ ...item, settled: true }));
+  cleaned.expenses = cleaned.expenses.map((item) => ({ ...item, settled: true, settledAt: item.settledAt || isoNow(), settledBy: item.settledBy || "Deltbo support" }));
   collectives[id] = cleaned;
   storageAdapter.saveCollectives(collectives);
 
@@ -1297,7 +1467,9 @@ function render() {
   renderInventory();
   renderContacts();
   renderConflicts();
+  renderHistory();
   renderSettings();
+  renderNotificationCenter();
   if ($("superCollectiveList")) renderSuperadmin();
 }
 
@@ -1320,6 +1492,7 @@ function renderShell() {
   $("inviteButton").classList.toggle("hidden", session.role !== "admin" && session.role !== "support");
   $("settingsForm").querySelector("button").disabled = session.role !== "admin" && session.role !== "support";
   updateThemeToggle();
+  renderModuleVisibility();
 }
 
 function toggleTheme() {
@@ -1368,10 +1541,10 @@ function renderHome() {
   const items = [
     rowInfo("Rom", `${state.members.length} av ${rooms} rom er fylt`),
     rowInfo("Leie", rentShare),
-    rowInfo("Handleliste", `${openShopping} varer mangler`),
-    rowInfo("Neste kalenderpunkt", nextEvent ? `${nextEvent.title} • ${formatDate(nextEvent.date)}` : "Ingen hendelser"),
-    rowInfo("Åpne saker", `${openCases} saker`),
-  ];
+    state.modules.shopping ? rowInfo("Handleliste", `${openShopping} varer mangler`) : "",
+    state.modules.calendar ? rowInfo("Neste kalenderpunkt", nextEvent ? `${nextEvent.title} • ${formatDate(nextEvent.date)}` : "Ingen hendelser") : "",
+    state.modules.conflict ? rowInfo("Åpne saker", `${openCases} saker`) : "",
+  ].filter(Boolean);
   $("todayList").innerHTML = items.join("");
 }
 
@@ -1420,11 +1593,16 @@ function renderMessages() {
 
 function renderEvents() {
   const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date));
-  $("eventList").innerHTML = emptyOrRows(sorted, (event) => row({
-    title: event.title,
-    meta: formatDate(event.date),
-    actions: button("delete-event", event.id, "Slett", "danger"),
-  }), "Ingen hendelser enda.");
+  $("eventList").innerHTML = emptyOrRows(sorted, (event) => {
+    const date = new Date(`${event.date}T12:00:00`);
+    const day = new Intl.DateTimeFormat("no-NO", { day: "2-digit" }).format(date);
+    const month = new Intl.DateTimeFormat("no-NO", { month: "short" }).format(date);
+    return row({
+      title: `${day}. ${month} • ${event.title}`,
+      meta: daysUntil(event.date),
+      actions: button("delete-event", event.id, "Slett", "danger"),
+    }).replace('class="row"', 'class="row calendar-row"');
+  }, "Ingen hendelser enda.");
 }
 
 function renderRules() {
@@ -1459,6 +1637,31 @@ function renderConflicts() {
   }), "Ingen saker enda.");
 }
 
+function renderHistory() {
+  if (!$("historyList")) return;
+
+  const archivedExpenseIds = new Set(state.history.map((item) => item.expenseId).filter(Boolean));
+  const settledFallback = state.expenses
+    .filter((expense) => expense.settled && !archivedExpenseIds.has(expense.id))
+    .map((expense) => ({
+      id: `settled-${expense.id}`,
+      expenseId: expense.id,
+      title: expense.title,
+      amount: Number(expense.amount || 0),
+      paidBy: expense.paidBy,
+      openedBy: expense.createdBy,
+      closedBy: expense.settledBy || expense.createdBy,
+      closedAt: expense.settledAt || expense.createdAt,
+      receiptName: expense.receipt?.name ?? "",
+    }));
+  const sorted = [...state.history, ...settledFallback].sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
+  $("historyList").innerHTML = emptyOrRows(sorted, (item) => row({
+    title: `${item.title} • ${item.amount} kr`,
+    meta: `Betalt av ${item.paidBy || "ukjent"} • åpnet av ${item.openedBy || "ukjent"} • lukket av ${item.closedBy || "ukjent"} • ${formatDateTime(item.closedAt)}${item.receiptName ? ` • kvittering: ${item.receiptName}` : ""}`,
+    actions: badge("Arkivert"),
+  }).replace('class="row"', 'class="row history-row"'), "Ingen gamle oppgjør enda. Når et beløp lukkes, blir det lagret her.");
+}
+
 function renderSettings() {
   if (!state.home) return;
 
@@ -1466,6 +1669,72 @@ function renderSettings() {
   $("settingsAddress").value = state.home.address ?? "";
   $("settingsRent").value = state.home.rentAmount ?? "";
   $("settingsRooms").value = state.home.roomCount ?? "";
+  document.querySelectorAll("[data-module-setting]").forEach((input) => {
+    input.checked = state.modules?.[input.dataset.moduleSetting] !== false;
+  });
+  document.querySelectorAll("[data-notification-setting]").forEach((input) => {
+    input.checked = state.notificationSettings?.[input.dataset.notificationSetting] !== false;
+  });
+}
+
+function renderNotificationCenter() {
+  if (!$("notificationList")) return;
+
+  const visible = [...state.notifications]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 6);
+  const unread = state.notifications.filter((item) => !item.read).length;
+  $("notificationCount").textContent = `${unread} nye`;
+  $("notificationList").innerHTML = emptyOrRows(visible, (item) => row({
+    title: `${notificationPriorityLabel(item.priority)} ${item.title}`,
+    meta: `${notificationTypeLabel(item.type)} • ${formatDateTime(item.createdAt)} • ${item.read ? "lest" : item.text}`,
+    actions: item.read ? badge("Lest") : button("read-notification", item.id, "Lest", "secondary"),
+  }).replace('class="row"', `class="row notification-row ${item.read ? "is-read" : ""} priority-${escapeHtml(item.priority)}"`), "Ingen varsler enda.");
+}
+
+function renderModuleVisibility() {
+  Object.keys(DEFAULT_MODULES).forEach((moduleName) => {
+    const enabled = state.modules?.[moduleName] !== false;
+    document.querySelectorAll(`[data-tab="${moduleName}"]`).forEach((buttonElement) => buttonElement.classList.toggle("hidden", !enabled));
+    $(`tab-${moduleName}`)?.classList.toggle("module-disabled", !enabled);
+  });
+
+  const activeButton = document.querySelector(".menu button.active");
+  const activeTab = activeButton?.dataset.tab;
+  if (activeTab && state.modules?.[activeTab] === false) {
+    openTab("home", document.querySelector('[data-tab="home"]'));
+  }
+}
+
+function notificationPriorityLabel(priority) {
+  return {
+    critical: "Kritisk:",
+    important: "Viktig:",
+    normal: "Info:",
+    low: "Lav:",
+  }[priority] ?? "Info:";
+}
+
+function notificationTypeLabel(type) {
+  return {
+    shopping: "Handleliste",
+    expenses: "Utgifter",
+    cleaning: "Oppgaver",
+    messages: "Beskjeder",
+    rent: "Husleie",
+    crisis: "Krise",
+  }[type] ?? "Varsel";
+}
+
+function daysUntil(date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${date}T00:00:00`);
+  const diff = Math.round((target - today) / 86_400_000);
+  if (diff < 0) return `${Math.abs(diff)} dager siden`;
+  if (diff === 0) return "I dag";
+  if (diff === 1) return "I morgen";
+  return `Om ${diff} dager`;
 }
 
 function renderSuperadmin() {
@@ -1518,8 +1787,16 @@ function paymentLabel(method) {
 }
 
 function openTab(name, button) {
+  if (state.modules?.[name] === false) {
+    showToast(`${MODULE_LABELS[name]} er skrudd av i innstillingene`);
+    return;
+  }
+
+  const tab = $(`tab-${name}`);
+  if (!tab || !button) return;
+
   document.querySelectorAll(".tabview").forEach((tabView) => tabView.classList.add("hidden"));
-  $(`tab-${name}`).classList.remove("hidden");
+  tab.classList.remove("hidden");
   document.querySelectorAll(".menu button").forEach((menuButton) => menuButton.classList.remove("active"));
   button.classList.add("active");
 }

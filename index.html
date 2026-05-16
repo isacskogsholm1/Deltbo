@@ -349,6 +349,7 @@
           <button data-tab="inventory">Inventar</button>
           <button data-tab="contacts">Kontakter</button>
           <button data-tab="conflict">Saker</button>
+          <button data-tab="history">Historikk</button>
           <button data-tab="settings">Innstillinger</button>
           <button data-action="logout">Logg ut</button>
         </div>
@@ -531,6 +532,14 @@
           </div>
         </div>
 
+        <div id="tab-history" class="tabview hidden">
+          <div class="card">
+            <h2>Historikk</h2>
+            <p>Gamle oppgjør blir liggende her etter at personen som åpnet beløpet lukker det.</p>
+            <div id="historyList" class="list"></div>
+          </div>
+        </div>
+
         <div id="tab-settings" class="tabview hidden">
           <form id="settingsForm" class="card form">
             <h2>Innstillinger</h2>
@@ -540,9 +549,43 @@
               <div><label for="settingsRent">Månedsleie totalt</label><input id="settingsRent" inputmode="numeric" /></div>
               <div><label for="settingsRooms">Antall rom</label><input id="settingsRooms" inputmode="numeric" /></div>
             </div>
+            <div class="settings-section">
+              <h3>Moduler</h3>
+              <div class="module-grid">
+                <label class="checkline"><input type="checkbox" data-module-setting="expenses" /> Utgifter</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="cleaning" /> Rengjøring</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="shopping" /> Handleliste</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="calendar" /> Kalender</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="rules" /> Husregler</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="inventory" /> Inventar</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="contacts" /> Kontakter</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="conflict" /> Saker</label>
+              </div>
+            </div>
+            <div class="settings-section">
+              <h3>Varsler</h3>
+              <div class="module-grid">
+                <label class="checkline"><input type="checkbox" data-notification-setting="shopping" /> Handleliste</label>
+                <label class="checkline"><input type="checkbox" data-notification-setting="expenses" /> Utgifter og oppgjør</label>
+                <label class="checkline"><input type="checkbox" data-notification-setting="cleaning" /> Rengjøring</label>
+                <label class="checkline"><input type="checkbox" data-notification-setting="messages" /> Beskjeder</label>
+                <label class="checkline locked"><input type="checkbox" checked disabled /> Husleie, brannalarm og kriser</label>
+              </div>
+            </div>
             <button class="btn" type="submit">Lagre innstillinger</button>
           </form>
         </div>
+
+        <section id="notificationCenter" class="notification-center">
+          <div class="notification-head">
+            <div>
+              <h3>Varsler</h3>
+              <span id="notificationCount" class="muted">0 nye</span>
+            </div>
+            <button class="btn secondary" type="button" data-action="clear-notifications">Rydd leste</button>
+          </div>
+          <div id="notificationList" class="list"></div>
+        </section>
       </main>
     </div>
   </section>
