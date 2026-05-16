@@ -1,9 +1,0 @@
-<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">Deltbo logo</title>
-  <desc id="desc">A rounded green home mark shaped like a letter D.</desc>
-  <rect x="8" y="8" width="80" height="80" rx="24" fill="#EFFFDA"/>
-  <path d="M27 66V35.5L48 21L69 35.5V66C69 72.6 63.6 78 57 78H39C32.4 78 27 72.6 27 66Z" fill="#7CDF2A"/>
-  <path d="M38 65V39.5L49 32L60 39.5V65C60 67.8 57.8 70 55 70H43C40.2 70 38 67.8 38 65Z" fill="#17351F"/>
-  <path d="M45 70V54C45 51.8 46.8 50 49 50C51.2 50 53 51.8 53 54V70H45Z" fill="#EFFFDA"/>
-  <path d="M28 35.5L48 21L68 35.5" stroke="#17351F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
