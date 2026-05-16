@@ -2,6 +2,7 @@
 const SESSION_KEY = "DeltboSession";
 const COLLECTIVES_KEY = "DeltboCollectives";
 const CONTACTS_KEY = "DeltboContactRequests";
+const THEME_KEY = "DeltboTheme";
 const LEGACY_PREFIX = "kol" + "lex";
 const LEGACY_STORAGE_KEY = `${LEGACY_PREFIX}State`;
 const LEGACY_SESSION_KEY = `${LEGACY_PREFIX}Session`;
@@ -66,6 +67,7 @@ let toastTimer;
 let demoTimer;
 let demoSceneIndex = 0;
 let createMode = "paid";
+let activeTheme = localStorage.getItem(THEME_KEY) || "light";
 
 const demoScenes = [
   ["Betal og opprett", "Admin godkjenner betaling og tar rom 1 i kollektivet."],
@@ -77,6 +79,7 @@ const demoScenes = [
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", () => {
+  applyTheme(activeTheme);
   bindUi();
   routeFromUrl();
   render();
@@ -133,6 +136,7 @@ function handleClick(event) {
     "close-super-login": closeSuperLogin,
     "open-dashboard": () => openDashboard("admin"),
     "copy-invite": copyInvite,
+    "toggle-theme": toggleTheme,
     "scroll-features": () => $("features").scrollIntoView({ behavior: "smooth" }),
     "scroll-demo": () => $("demo").scrollIntoView({ behavior: "smooth" }),
     "toggle-demo": toggleDemo,
@@ -1315,6 +1319,25 @@ function renderShell() {
       : `Admin • ${PRICE_NOK} kr/mnd`;
   $("inviteButton").classList.toggle("hidden", session.role !== "admin" && session.role !== "support");
   $("settingsForm").querySelector("button").disabled = session.role !== "admin" && session.role !== "support";
+  updateThemeToggle();
+}
+
+function toggleTheme() {
+  applyTheme(activeTheme === "dark" ? "light" : "dark");
+  showToast(activeTheme === "dark" ? "Mørk modus aktivert" : "Lys modus aktivert");
+}
+
+function applyTheme(theme) {
+  activeTheme = theme === "dark" ? "dark" : "light";
+  document.body.dataset.theme = activeTheme;
+  localStorage.setItem(THEME_KEY, activeTheme);
+  updateThemeToggle();
+}
+
+function updateThemeToggle() {
+  if (!$("themeToggle")) return;
+
+  $("themeToggle").textContent = activeTheme === "dark" ? "Lys modus" : "Mørk modus";
 }
 
 function renderStats() {

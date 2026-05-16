@@ -1622,6 +1622,282 @@ label {
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
 }
 
+body {
+  --dash-bg: #f5f8f1;
+  --dash-surface: #ffffffd9;
+  --dash-surface-solid: #ffffff;
+  --dash-row: #f7fbf3;
+  --dash-line: #dfe9d9;
+  --dash-shadow: 0 22px 55px #24421a14;
+}
+
+.dashboard-app {
+  background:
+    linear-gradient(180deg, var(--dash-bg), #ffffff 72%);
+}
+
+.dashboard-app .side {
+  width: 284px;
+  padding: 24px 18px;
+  background: var(--dash-surface-solid);
+  border-right: 1px solid var(--dash-line);
+  box-shadow: 18px 0 45px #24421a0a;
+}
+
+.dashboard-app .side .logo {
+  margin: 0 6px 24px;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 18px;
+  background: var(--dash-row);
+}
+
+.dashboard-app .menu {
+  gap: 8px;
+}
+
+.dashboard-app .menu button {
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 13px 14px;
+  font-weight: 800;
+}
+
+.dashboard-app .menu button.active,
+.dashboard-app .menu button:hover {
+  border-color: #cbe4bf;
+  background: #effbe8;
+  color: #1b2c16;
+  transform: translateX(3px);
+}
+
+.dashboard-app .account-role {
+  margin: 24px 6px 0;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: var(--dash-row);
+}
+
+.dashboard-app .main {
+  padding: 34px;
+}
+
+.dashboard-app .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -10px -8px 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--dash-line);
+  border-radius: 22px;
+  background: var(--dash-surface);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--dash-shadow);
+}
+
+.dashboard-app .topbar h2 {
+  font-size: clamp(26px, 4vw, 42px);
+  letter-spacing: 0;
+}
+
+.dashboard-app .cards {
+  gap: 14px;
+}
+
+.dashboard-app .card {
+  border-color: var(--dash-line);
+  border-radius: 20px;
+  box-shadow: var(--dash-shadow);
+}
+
+.dashboard-app .stat {
+  min-height: 132px;
+  display: grid;
+  align-content: space-between;
+  overflow: hidden;
+  position: relative;
+}
+
+.dashboard-app .stat::after {
+  content: "";
+  position: absolute;
+  inset: auto 18px 16px;
+  height: 3px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #78df25, #b8ef72, transparent);
+}
+
+.dashboard-app .stat h2 {
+  font-size: clamp(26px, 4vw, 38px);
+  margin-bottom: 14px;
+}
+
+.dashboard-app .dashgrid,
+.dashboard-app .split {
+  gap: 18px;
+}
+
+.dashboard-app .row {
+  padding: 15px;
+  border-color: var(--dash-line);
+  border-radius: 16px;
+  background: var(--dash-row);
+}
+
+.dashboard-app .row:hover {
+  border-color: #c7dfbc;
+  transform: translateY(-1px);
+}
+
+.dashboard-app .row-title {
+  font-size: 15px;
+}
+
+.dashboard-app input,
+.dashboard-app textarea,
+.dashboard-app select {
+  border-radius: 14px;
+}
+
+.dashboard-app .btn {
+  border-radius: 14px;
+}
+
+body[data-theme="dark"] {
+  --bg: #090b10;
+  --panel: #111821;
+  --panel2: #151f2a;
+  --txt: #f6f8fb;
+  --muted: #9aa7b5;
+  --lime: #9cf02f;
+  --line: #263241;
+  --danger: #ff7373;
+  --ok: #80ffb0;
+  --warn: #ffd166;
+  --shadow: 0 24px 70px #0008;
+  --dash-bg: #080b10;
+  --dash-surface: #111821d9;
+  --dash-surface-solid: #0e141c;
+  --dash-row: #121a24;
+  --dash-line: #273443;
+  --dash-shadow: 0 26px 70px #0008;
+  background:
+    linear-gradient(180deg, #090b10 0%, #0c1118 54%, #080a0e 100%);
+  color: var(--txt);
+}
+
+body[data-theme="dark"] .nav {
+  background: #090b10e8;
+  border-bottom-color: #1d2632;
+  box-shadow: 0 8px 30px #0005;
+}
+
+body[data-theme="dark"] .btn {
+  background: #9cf02f;
+  color: #11170e;
+  box-shadow: 0 14px 30px #9cf02f22;
+}
+
+body[data-theme="dark"] .btn.secondary,
+body[data-theme="dark"] .btn.ghost {
+  background: #121a24;
+  color: var(--txt);
+  border-color: #2a3747;
+  box-shadow: none;
+}
+
+body[data-theme="dark"] .btn.danger {
+  background: #2a1215;
+  color: #fff;
+  border-color: #5a252b;
+}
+
+body[data-theme="dark"] .pill,
+body[data-theme="dark"] .badge,
+body[data-theme="dark"] .hero-proof span,
+body[data-theme="dark"] .live-dot {
+  background: #121a24;
+  color: #d9e8d3;
+  border-color: #2a3747;
+}
+
+body[data-theme="dark"] p,
+body[data-theme="dark"] .hero p,
+body[data-theme="dark"] .note,
+body[data-theme="dark"] .small,
+body[data-theme="dark"] .muted,
+body[data-theme="dark"] .row-meta,
+body[data-theme="dark"] .payment-head p,
+body[data-theme="dark"] .payment-option small {
+  color: var(--muted);
+}
+
+body[data-theme="dark"] .phone,
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .price,
+body[data-theme="dark"] .demo-player,
+body[data-theme="dark"] .payment-panel,
+body[data-theme="dark"] .payment-option {
+  background: linear-gradient(180deg, #151d27, #0f151d);
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+}
+
+body[data-theme="dark"] .tile,
+body[data-theme="dark"] .row,
+body[data-theme="dark"] .room-strip span,
+body[data-theme="dark"] .checkline {
+  background: #101720;
+  border-color: var(--line);
+}
+
+body[data-theme="dark"] .sections,
+body[data-theme="dark"] .demo-band {
+  background: #0b1017;
+  border-color: var(--line);
+}
+
+body[data-theme="dark"] .stat h2,
+body[data-theme="dark"] .row-title,
+body[data-theme="dark"] .tile b,
+body[data-theme="dark"] .price strong,
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] .room-strip b,
+body[data-theme="dark"] .phone-top,
+body[data-theme="dark"] .demo-caption b {
+  color: var(--txt);
+}
+
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] select {
+  background: #0d131b;
+  border-color: #2a3747;
+  color: var(--txt);
+}
+
+body[data-theme="dark"] label {
+  color: #d9e2ec;
+}
+
+body[data-theme="dark"] .modal {
+  background: #05070bd9;
+}
+
+body[data-theme="dark"] .dashboard-app .menu button {
+  color: #c8d3df;
+}
+
+body[data-theme="dark"] .dashboard-app .menu button.active,
+body[data-theme="dark"] .dashboard-app .menu button:hover {
+  background: #182331;
+  border-color: #2c3b4d;
+  color: #ffffff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
