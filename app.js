@@ -8,7 +8,9 @@ const LEGACY_STORAGE_KEY = `${LEGACY_PREFIX}State`;
 const LEGACY_SESSION_KEY = `${LEGACY_PREFIX}Session`;
 const LEGACY_COLLECTIVES_KEY = `${LEGACY_PREFIX}Collectives`;
 const LEGACY_CONTACTS_KEY = `${LEGACY_PREFIX}ContactRequests`;
-const PRICE_NOK = 99;
+const BASE_PRICE_NOK = 99;
+const MEMBER_PRICE_NOK = 19;
+const PRICE_NOK = BASE_PRICE_NOK;
 const SUPER_ADMIN = { username: "deltbo", password: "support99" };
 const DEFAULT_MODULES = {
   expenses: true,
@@ -101,7 +103,7 @@ let toastTimer;
 let demoTimer;
 let demoSceneIndex = 0;
 let createMode = "paid";
-let activeTheme = localStorage.getItem(THEME_KEY) || "light";
+let activeTheme = "light";
 
 const demoScenes = [
   ["Start kollektivet", "Én person setter opp rom, betaling og invite-link."],
@@ -132,6 +134,8 @@ function bindUi() {
   document.querySelectorAll('input[name="paymentMethod"]').forEach((input) => {
     input.addEventListener("change", renderPaymentFields);
   });
+  $("firstMembers").addEventListener("input", renderCreatePrice);
+  $("roomCount").addEventListener("input", renderCreatePrice);
   $("dashboardViewSelect")?.addEventListener("change", (event) => openTab(event.target.value));
   document.querySelectorAll(".file-input").forEach((input) => input.addEventListener("change", () => updateFileLabel(input)));
   $("memberForm").addEventListener("submit", addMember);
@@ -391,10 +395,29 @@ function todayPlus(days) {
 }
 
 function saveState(message) {
+  syncHomePricing();
   storageAdapter.saveAppState(state);
   saveCurrentCollectiveToRegistry();
   render();
   if (message) showToast(message);
+}
+
+function syncHomePricing() {
+  if (!state.home || state.home.plan === "support_created") return;
+
+  const memberCount = Math.max(state.members.length, 1);
+  const amountNok = calculateMonthlyPrice(memberCount);
+  state.home.priceNok = amountNok;
+  state.home.basePriceNok = BASE_PRICE_NOK;
+  state.home.memberPriceNok = MEMBER_PRICE_NOK;
+  state.home.billableMembers = memberCount;
+  state.home.billing = {
+    ...(state.home.billing ?? {}),
+    amountNok,
+    basePriceNok: BASE_PRICE_NOK,
+    memberPriceNok: MEMBER_PRICE_NOK,
+    memberCount,
+  };
 }
 
 function saveSession(nextSession) {
@@ -506,7 +529,8 @@ function createHome(event) {
   const adminPass = $("adminPass").value;
   const firstMembers = splitNames(value("firstMembers"));
   const isSupportCreate = createMode === "support" && session.role === "superadmin";
-  const billing = isSupportCreate ? createSupportBilling() : collectBilling();
+  const monthlyPrice = calculateMonthlyPrice(firstMembers.length + 1);
+  const billing = isSupportCreate ? createSupportBilling() : collectBilling(monthlyPrice);
 
   if (!name || !adminUser || adminPass.length < 4) {
     $("createError").textContent = "Fyll inn navn på kollektivet, brukernavn og et passord på minst 4 tegn.";
@@ -555,7 +579,10 @@ function createHome(event) {
       adminPass,
       inviteToken,
       inviteUrl: "",
-      priceNok: isSupportCreate ? 0 : PRICE_NOK,
+      priceNok: isSupportCreate ? 0 : monthlyPrice,
+      basePriceNok: isSupportCreate ? 0 : BASE_PRICE_NOK,
+      memberPriceNok: isSupportCreate ? 0 : MEMBER_PRICE_NOK,
+      billableMembers: members.length,
       plan: isSupportCreate ? "support_created" : "monthly",
       billing,
       createdAt: isoNow(),
@@ -603,12 +630,15 @@ function superLogin(event) {
   showToast("Logget inn som Deltbo admin");
 }
 
-function collectBilling() {
+function collectBilling(amountNok = calculateMonthlyPrice(plannedMemberCount())) {
   const method = document.querySelector('input[name="paymentMethod"]:checked')?.value ?? "vipps";
   const billing = {
     method,
     status: "paid_before_create",
-    amountNok: PRICE_NOK,
+    amountNok,
+    basePriceNok: BASE_PRICE_NOK,
+    memberPriceNok: MEMBER_PRICE_NOK,
+    memberCount: plannedMemberCount(),
     interval: "monthly",
     email: value("billingEmail"),
     phone: value("paymentPhone"),
@@ -673,7 +703,7 @@ function renderPaymentFields() {
 function renderCreateMode() {
   const isSupportCreate = createMode === "support" && session.role === "superadmin";
 
-  $("createPricePill").textContent = isSupportCreate ? "Deltbo admin" : "99 kr/mnd";
+  $("createPricePill").textContent = isSupportCreate ? "Deltbo admin" : priceLabel(plannedMemberCount());
   $("createTitle").textContent = isSupportCreate ? "Opprett kollektiv som support" : "Start kollektiv";
   $("createIntro").textContent = isSupportCreate
     ? "Du oppretter et kollektiv fra Deltbo-adminpanelet. Admin bruker fortsatt rom 1."
@@ -681,6 +711,31 @@ function renderCreateMode() {
   $("paymentPanel").classList.toggle("hidden", isSupportCreate);
   $("createSubmit").textContent = isSupportCreate ? "Opprett fra support" : "Start kollektivet";
   $("createBackButton").textContent = isSupportCreate ? "Til adminpanel" : "Tilbake";
+  renderCreatePrice();
+}
+
+function renderCreatePrice() {
+  const memberCount = plannedMemberCount();
+  const label = priceLabel(memberCount);
+  if ($("createPricePill") && createMode !== "support") $("createPricePill").textContent = label;
+  document.querySelectorAll("[data-price-label]").forEach((element) => {
+    element.textContent = label;
+  });
+  document.querySelectorAll("[data-member-count-label]").forEach((element) => {
+    element.textContent = String(memberCount);
+  });
+}
+
+function plannedMemberCount() {
+  return Math.max(splitNames(value("firstMembers")).length + 1, 1);
+}
+
+function calculateMonthlyPrice(memberCount) {
+  return BASE_PRICE_NOK + MEMBER_PRICE_NOK * Math.max(Number(memberCount) || 1, 1);
+}
+
+function priceLabel(memberCount) {
+  return `${calculateMonthlyPrice(memberCount)} kr/mnd`;
 }
 
 function startDemoLoop() {
@@ -784,6 +839,10 @@ function hydrateStateFromInvite(inviteToken) {
 
   const payload = decodeInvitePayload(new URLSearchParams(window.location.search).get("data") || "");
   if (!payload?.home || payload.home.inviteToken !== inviteToken) return;
+  const inviteMembers = Array.isArray(payload.members) && payload.members.length
+    ? payload.members
+    : [{ id: uid(), name: payload.home.adminUser || "Admin", room: "Rom 1", role: "admin", joinedAt: isoNow() }];
+  const invitePrice = calculateMonthlyPrice(inviteMembers.length);
 
   state = normalizeState({
     ...demoData,
@@ -797,15 +856,16 @@ function hydrateStateFromInvite(inviteToken) {
       adminPass: "",
       inviteToken,
       inviteUrl: window.location.href,
-      priceNok: PRICE_NOK,
+      priceNok: invitePrice,
+      basePriceNok: BASE_PRICE_NOK,
+      memberPriceNok: MEMBER_PRICE_NOK,
+      billableMembers: inviteMembers.length,
       plan: "member_invite",
-      billing: { method: "member_invite", status: "member_access", amountNok: PRICE_NOK },
+      billing: { method: "member_invite", status: "member_access", amountNok: invitePrice },
       createdAt: isoNow(),
       createdBy: "invite",
     },
-    members: Array.isArray(payload.members) && payload.members.length
-      ? payload.members
-      : [{ id: uid(), name: payload.home.adminUser || "Admin", room: "Rom 1", role: "admin", joinedAt: isoNow() }],
+    members: inviteMembers,
   });
   storageAdapter.saveAppState(state);
 }
@@ -1513,7 +1573,7 @@ function renderShell() {
     ? "Medlemsvisning"
     : session.role === "support"
       ? "Supportvisning"
-      : `Admin • ${PRICE_NOK} kr/mnd`;
+      : `Admin • ${state.home.priceNok ?? calculateMonthlyPrice(state.members.length)} kr/mnd`;
   $("inviteButton").classList.toggle("hidden", session.role !== "admin" && session.role !== "support");
   $("settingsForm").querySelector("button").disabled = session.role !== "admin" && session.role !== "support";
   updateThemeToggle();
@@ -1770,7 +1830,7 @@ function renderSuperadmin() {
   const totals = collectives.reduce((summary, collective) => {
     summary.members += collective.members.length;
     summary.openCases += collective.conflicts.filter((item) => !item.resolved).length;
-    summary.mrr += Number(collective.home?.priceNok ?? PRICE_NOK);
+    summary.mrr += Number(collective.home?.priceNok ?? calculateMonthlyPrice(collective.members.length));
     return summary;
   }, { members: 0, openCases: 0, mrr: 0 });
 
@@ -1962,6 +2022,9 @@ window.DeltboTest = {
   createInviteToken,
   createInviteUrl,
   PRICE_NOK,
+  BASE_PRICE_NOK,
+  MEMBER_PRICE_NOK,
+  calculateMonthlyPrice,
 };
 
 

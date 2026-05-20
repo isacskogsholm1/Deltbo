@@ -27,11 +27,11 @@
         <h1>Slutt å styre alt i gruppechatten.</h1>
         <p>Deltbo samler husleie, utlegg, vask, handleliste og beskjeder på ett sted. Perfekt når fem folk, fire timeplaner og én litt full fryser skal gå opp.</p>
         <div class="actions">
-          <button class="btn" data-action="show-create">Start for 99 kr/mnd</button>
+          <button class="btn" data-action="show-create">Start for 99 kr/mnd + 19 kr per medlem</button>
           <button class="btn secondary" data-action="scroll-demo">Se hvordan det funker</button>
         </div>
         <div class="hero-proof">
-          <span>99 kr/mnd</span>
+          <span>99 kr/mnd + 19 kr per medlem</span>
           <span>Ingen fake eksempelrot</span>
           <span>Alle vet hvem som gjør hva</span>
         </div>
@@ -120,8 +120,8 @@
       </div>
       <div class="price">
         <h2>Alt dere trenger</h2>
-        <strong>99 kr</strong> <span class="green">/mnd</span>
-        <p>per kollektiv</p>
+        <strong>99 kr</strong> <span class="accent">/mnd</span>
+        <p>+ 19 kr per medlem i kollektivet</p>
         <ul>
           <li>Utlegg med kvittering</li>
           <li>Medlemmer, rom og invitasjoner</li>
@@ -213,7 +213,7 @@
     <main class="wrap create-wrap">
       <form id="createForm" class="card form">
         <div class="form-head">
-          <span class="pill" id="createPricePill">99 kr/mnd</span>
+          <span class="pill" id="createPricePill">118 kr/mnd</span>
           <h1 id="createTitle">Start kollektiv</h1>
           <p id="createIntro">Du blir admin, tar ett rom og inviterer resten med link.</p>
         </div>
@@ -254,9 +254,9 @@
           <div class="payment-head">
             <div>
               <h2 id="paymentTitle">Betaling</h2>
-              <p>Velg hvordan dere vil betale for Deltbo.</p>
+              <p>99 kr/mnd i grunnpris + 19 kr per medlem. <span data-member-count-label>1</span> medlem akkurat nå.</p>
             </div>
-            <span class="badge">99 kr/mnd</span>
+            <span class="badge" data-price-label>118 kr/mnd</span>
           </div>
 
           <div class="payment-options">
@@ -294,7 +294,7 @@
           </div>
           <label class="checkline">
             <input id="paymentConfirmed" type="checkbox" />
-            <span>Jeg bekrefter at betaling på 99 kr/mnd er godkjent.</span>
+            <span>Jeg bekrefter at betaling på <span data-price-label>118 kr/mnd</span> er godkjent.</span>
           </label>
         </div>
         <p id="createError" class="small error" role="alert"></p>
