@@ -71,6 +71,7 @@ const demoData = {
   messages: [
     { id: uid(), text: "Husk husmøte søndag kl. 18.", author: "Deltbo", createdAt: isoNow() },
   ],
+  chat: [],
   events: [
     { id: uid(), title: "Husmøte", date: todayPlus(4) },
     { id: uid(), title: "Søppel hentes", date: todayPlus(2) },
@@ -185,9 +186,12 @@ function handleClick(event) {
     "scroll-demo": () => $("demo").scrollIntoView({ behavior: "smooth" }),
     "toggle-demo": toggleDemo,
     "restart-demo": restartDemo,
+    "select-expense-all": () => setExpenseParticipants("all"),
+    "select-expense-current": () => setExpenseParticipants("current"),
     "show-quick-add": () => openModal("quickAdd"),
     "close-quick-add": () => closeModal("quickAdd"),
     "add-message": addMessage,
+    "send-chat": sendChatMessage,
     "refresh-superadmin": () => {
       renderSuperadmin();
       showToast("Listen er oppdatert");
@@ -209,6 +213,7 @@ function handleClick(event) {
     "toggle-shop": () => updateById("shopping", id, (item) => ({ ...item, done: !item.done })),
     "delete-shop": () => removeById("shopping", id, "Vare fjernet"),
     "delete-message": () => removeById("messages", id, "Beskjed fjernet"),
+    "delete-chat": () => removeById("chat", id, "Chatmelding fjernet"),
     "download-message-calendar": () => downloadMessageCalendar(id),
     "delete-event": () => removeById("events", id, "Hendelse fjernet"),
     "delete-rule": () => removeById("rules", id, "Regel fjernet"),
@@ -297,6 +302,12 @@ function normalizeState(savedState) {
       text: item.text ?? "",
       author: item.author ?? "Deltbo",
       remindAt: item.remindAt ?? "",
+      createdAt: item.createdAt ?? isoNow(),
+    })),
+    chat: normalizeCollection(merged.chat, (item) => ({
+      id: item.id ?? uid(),
+      text: item.text ?? "",
+      author: item.author ?? "Deltbo",
       createdAt: item.createdAt ?? isoNow(),
     })),
     events: normalizeCollection(merged.events, (item) => ({ id: item.id ?? uid(), title: item.title ?? "Hendelse", date: item.date ?? todayPlus(7) })),
@@ -629,6 +640,7 @@ function createHome(event) {
     cleaning: [],
     shopping: [],
     messages: [],
+    chat: [],
     events: [],
     rules: [],
     inventory: [],
@@ -1308,6 +1320,15 @@ function addMessage() {
   saveState("Beskjed sendt");
 }
 
+function sendChatMessage() {
+  const text = value("chatText");
+  if (!text) return;
+
+  state.chat.unshift({ id: uid(), text, author: currentDisplayName(), createdAt: isoNow() });
+  clearFields("chatText");
+  saveState("Chatmelding sendt");
+}
+
 function addEvent(event) {
   event.preventDefault();
   const title = value("eventTitle");
@@ -1673,6 +1694,7 @@ function render() {
   renderCleaning();
   renderShopping();
   renderMessages();
+  renderChat();
   renderEvents();
   renderRules();
   renderInventory();
@@ -1758,9 +1780,20 @@ function renderExpenseParticipantOptions() {
   $("expenseParticipants").innerHTML = state.members.map((member) => `
     <label class="participant-option">
       <input type="checkbox" value="${escapeHtml(member.name)}" checked />
-      <span>${escapeHtml(memberDisplayName(member))}</span>
+      <span>
+        <strong>${escapeHtml(memberDisplayName(member))}</strong>
+        ${member.room ? `<small>${escapeHtml(member.room)}</small>` : ""}
+      </span>
     </label>
   `).join("");
+}
+
+function setExpenseParticipants(mode) {
+  const inputs = [...document.querySelectorAll("#expenseParticipants input")];
+  const currentName = currentUserName();
+  inputs.forEach((input) => {
+    input.checked = mode === "all" || input.value === currentName;
+  });
 }
 
 function renderHome() {
@@ -1869,6 +1902,21 @@ function renderMessages() {
     meta: `${message.author} • ${formatDateTime(message.createdAt)}${message.remindAt ? ` • kalender: ${formatDateTime(message.remindAt)}` : ""}`,
     actions: `${button("download-message-calendar", message.id, "Legg i kalender", "secondary")}${button("delete-message", message.id, "Slett", "danger")}`,
   }), "Ingen beskjeder enda.");
+}
+
+function renderChat() {
+  if (!$("chatList")) return;
+
+  $("chatList").innerHTML = emptyOrRows(state.chat, (message) => `
+    <div class="chat-message ${message.author === currentDisplayName() ? "is-mine" : ""}">
+      <div>
+        <strong>${escapeHtml(message.author)}</strong>
+        <span>${escapeHtml(formatDateTime(message.createdAt))}</span>
+      </div>
+      <p>${escapeHtml(message.text)}</p>
+      ${message.author === currentDisplayName() ? `<button class="chat-delete" data-action="delete-chat" data-id="${escapeHtml(message.id)}">Slett</button>` : ""}
+    </div>
+  `, "Ingen chatmeldinger enda.");
 }
 
 function renderEvents() {

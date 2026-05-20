@@ -2276,26 +2276,83 @@ body {
 
 .participant-box {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.participant-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.participant-head label {
+  margin: 0;
+}
+
+.participant-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.mini-action {
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #7c2d12;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .participant-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .participant-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
+  gap: 10px;
+  min-height: 46px;
   margin: 0;
-  padding: 10px;
+  padding: 9px 12px;
   border: 1px solid var(--dash-line);
-  border-radius: 12px;
+  border-radius: 999px;
   background: #fff7ed;
   font-weight: 800;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.participant-option input {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: #f97316;
+}
+
+.participant-option span {
+  display: grid;
+  min-width: 0;
+  line-height: 1.05;
+}
+
+.participant-option strong {
+  color: var(--dash-ink);
+  overflow-wrap: anywhere;
+}
+
+.participant-option small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .expense-summary {
@@ -2322,6 +2379,68 @@ body {
 
 .balance-row strong {
   white-space: nowrap;
+}
+
+.chat-list {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.chat-message {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: #fff7ed;
+}
+
+.chat-message.is-mine {
+  background: #ffffff;
+  border-color: #f97316;
+}
+
+.chat-message div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.chat-message strong {
+  color: var(--dash-ink);
+}
+
+.chat-message span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chat-message p {
+  margin: 0;
+  color: var(--dash-ink);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.chat-delete {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a22828;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.chat-input-row {
+  align-items: stretch;
+  margin-top: 12px;
 }
 
 .file-input {

@@ -431,7 +431,13 @@
               <input id="expenseAmount" inputmode="numeric" placeholder="Beløp" />
               <select id="expensePaidBy"></select>
               <div class="participant-box">
-                <label>Hvem skal være med på dette?</label>
+                <div class="participant-head">
+                  <label>Hvem skal være med?</label>
+                  <div class="participant-actions">
+                    <button class="mini-action" type="button" data-action="select-expense-all">Alle</button>
+                    <button class="mini-action" type="button" data-action="select-expense-current">Kun meg</button>
+                  </div>
+                </div>
                 <div id="expenseParticipants" class="participant-grid"></div>
               </div>
               <label class="upload-card" for="expenseReceipt">
@@ -637,6 +643,19 @@
             <input id="messageText" placeholder="Hva bør alle få med seg?" />
             <input id="messageReminder" type="datetime-local" aria-label="Dato og tid for kalenderpåminnelse" />
             <button class="btn" data-action="add-message">Send</button>
+          </div>
+        </section>
+        <section class="side-panel collective-chat">
+          <div class="notification-head">
+            <div>
+              <h3>Chat</h3>
+              <span class="muted">Prat med kollektivet</span>
+            </div>
+          </div>
+          <div id="chatList" class="chat-list"></div>
+          <div class="input-row chat-input-row">
+            <input id="chatText" placeholder="Skriv en melding" />
+            <button class="btn" data-action="send-chat">Send</button>
           </div>
         </section>
           </aside>
