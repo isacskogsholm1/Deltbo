@@ -273,6 +273,7 @@ function normalizeState(savedState) {
       amount: Number(expense.amount ?? 0),
       paidBy: expense.paidBy ?? members[0]?.name ?? "Admin",
       createdBy: expense.createdBy ?? expense.paidBy ?? members[0]?.name ?? "Admin",
+      participants: normalizeExpenseParticipants(expense.participants, members),
       settled: Boolean(expense.settled),
       settledAt: expense.settledAt ?? "",
       settledBy: expense.settledBy ?? "",
@@ -344,6 +345,15 @@ function normalizeModules(modules) {
 
 function normalizeNotificationSettings(settings) {
   return { ...DEFAULT_NOTIFICATIONS, ...(settings ?? {}) };
+}
+
+function normalizeExpenseParticipants(participants, members) {
+  const memberNames = members.map((member) => member.name);
+  if (!Array.isArray(participants) || !participants.length) return memberNames;
+
+  const allowed = new Set(memberNames);
+  const normalized = participants.filter((name) => allowed.has(name));
+  return normalized.length ? normalized : memberNames;
 }
 
 function normalizeMembers(members) {
@@ -1196,6 +1206,11 @@ async function addExpense(event) {
   const amount = Number(value("expenseAmount"));
   if (!title || amount <= 0) return;
   const receipt = await receiptFromFileInput("expenseReceipt");
+  const participants = selectedExpenseParticipants();
+  if (!participants.length) {
+    showToast("Velg minst én person som skal være med på utlegget");
+    return;
+  }
 
   state.expenses.unshift({
     id: uid(),
@@ -1203,6 +1218,7 @@ async function addExpense(event) {
     amount,
     paidBy: value("expensePaidBy") || currentUserName(),
     createdBy: currentUserName(),
+    participants,
     settled: false,
     receipt,
     createdAt: isoNow(),
@@ -1274,6 +1290,12 @@ function mediaFromFileInput(id, options = {}) {
     };
     reader.readAsDataURL(file);
   });
+}
+
+function selectedExpenseParticipants() {
+  return [...document.querySelectorAll("#expenseParticipants input:checked")]
+    .map((input) => input.value)
+    .filter(Boolean);
 }
 
 function addMessage() {
@@ -1440,7 +1462,7 @@ function quickAdd(event) {
       showToast("Legg inn beløp for utlegget");
       return;
     }
-    state.expenses.unshift({ id: uid(), title: text, amount, paidBy: currentUserName(), createdBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
+    state.expenses.unshift({ id: uid(), title: text, amount, paidBy: currentUserName(), createdBy: currentUserName(), participants: state.members.map((member) => member.name), settled: false, receipt: null, createdAt: isoNow() });
     addNotification("expenses", isImportantExpense(text) ? "important" : "normal", "Nytt utlegg", `${currentUserName()} la inn ${text} på ${amount} kr.`);
   }
   if (type === "task") {
@@ -1497,6 +1519,7 @@ function archiveExpense(expense) {
     title: expense.title,
     amount: Number(expense.amount || 0),
     paidBy: expense.paidBy,
+    participants: expenseParticipants(expense),
     openedBy: expense.createdBy,
     closedBy: currentUserName(),
     closedAt,
@@ -1709,13 +1732,15 @@ function updateThemeToggle() {
 }
 
 function renderStats() {
-  const total = state.expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+  const openExpenses = state.expenses.filter((expense) => !expense.settled);
+  const total = openExpenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
   const receiptCount = [...state.expenses, ...state.shopping].filter((item) => item.receipt).length;
   const nextTask = state.cleaning.find((task) => !task.done);
-  const memberCount = Math.max(state.members.length, 1);
+  const balances = calculateExpenseBalances();
+  const currentBalance = balances.find((item) => item.name === currentUserName());
 
   $("totalExpenses").textContent = `${total} kr`;
-  $("yourShare").textContent = `${Math.round(total / memberCount)} kr`;
+  $("yourShare").textContent = `${Math.round(Math.max(currentBalance?.balance || 0, 0))} kr`;
   $("nextClean").textContent = nextTask ? nextTask.title : "Ingen";
   $("receiptCount").textContent = String(receiptCount);
 }
@@ -1724,6 +1749,18 @@ function renderSelects() {
   const options = state.members.map((member) => `<option value="${escapeHtml(member.name)}">${escapeHtml(member.name)}</option>`).join("");
   $("expensePaidBy").innerHTML = options;
   $("cleanAssignee").innerHTML = options;
+  renderExpenseParticipantOptions();
+}
+
+function renderExpenseParticipantOptions() {
+  if (!$("expenseParticipants")) return;
+
+  $("expenseParticipants").innerHTML = state.members.map((member) => `
+    <label class="participant-option">
+      <input type="checkbox" value="${escapeHtml(member.name)}" checked />
+      <span>${escapeHtml(memberDisplayName(member))}</span>
+    </label>
+  `).join("");
 }
 
 function renderHome() {
@@ -1749,11 +1786,64 @@ function renderMembers() {
 }
 
 function renderExpenses() {
-  $("expenseList").innerHTML = emptyOrRows(state.expenses, (expense) => row({
-    title: `${expense.title} • ${expense.amount} kr`,
-    meta: `Betalt av ${expense.paidBy} • åpnet av ${expense.createdBy} • ${expense.settled ? "lukket" : "venter"} • ${expense.receipt ? `kvittering: ${expense.receipt.name}` : "ingen kvittering"}`,
-    actions: `${receiptLink(expense.receipt)}${expense.createdBy === currentUserName() ? `${button("toggle-expense", expense.id, expense.settled ? "Åpne igjen" : "Lukk beløp", "secondary")}${button("delete-expense", expense.id, "Slett", "danger")}` : badge(`Lukkes av ${expense.createdBy}`)}`,
-  }), "Ingen utlegg enda.");
+  $("expenseList").innerHTML = `
+    <div class="expense-summary">
+      <h3>Oppgjør per medlem</h3>
+      ${expenseBalanceRows()}
+    </div>
+    ${emptyOrRows(state.expenses, (expense) => {
+      const participants = expenseParticipants(expense);
+      const share = expenseShare(expense);
+      return row({
+        title: `${expense.title} • ${expense.amount} kr`,
+        meta: `Betalt av ${expense.paidBy} • ${participantLabels(participants)} • ${Math.round(share)} kr per deltaker • ${expense.settled ? "lukket" : "venter"} • ${expense.receipt ? `kvittering: ${expense.receipt.name}` : "ingen kvittering"}`,
+        actions: `${receiptLink(expense.receipt)}${expense.createdBy === currentUserName() ? `${button("toggle-expense", expense.id, expense.settled ? "Åpne igjen" : "Lukk beløp", "secondary")}${button("delete-expense", expense.id, "Slett", "danger")}` : badge(`Lukkes av ${expense.createdBy}`)}`,
+      });
+    }, "Ingen utlegg enda.")}
+  `;
+}
+
+function expenseBalanceRows() {
+  return calculateExpenseBalances().map((member) => `
+    <div class="balance-row">
+      <span>${escapeHtml(memberDisplayName(member.member))}</span>
+      <strong>${escapeHtml(balanceLabel(member.balance))}</strong>
+    </div>
+  `).join("");
+}
+
+function calculateExpenseBalances() {
+  const balances = new Map(state.members.map((member) => [member.name, { member, name: member.name, balance: 0 }]));
+  state.expenses.filter((expense) => !expense.settled).forEach((expense) => {
+    const share = expenseShare(expense);
+    expenseParticipants(expense).forEach((name) => {
+      const entry = balances.get(name);
+      if (entry) entry.balance += share;
+    });
+    const payer = balances.get(expense.paidBy);
+    if (payer) payer.balance -= Number(expense.amount || 0);
+  });
+  return [...balances.values()];
+}
+
+function balanceLabel(balance) {
+  const rounded = Math.round(balance);
+  if (rounded > 0) return `Skylder ${rounded} kr`;
+  if (rounded < 0) return `Til gode ${Math.abs(rounded)} kr`;
+  return "0 kr";
+}
+
+function expenseParticipants(expense) {
+  return normalizeExpenseParticipants(expense.participants, state.members);
+}
+
+function participantLabels(participants) {
+  return participants.map((name) => memberDisplayName(state.members.find((member) => member.name === name)) || name).join(", ");
+}
+
+function expenseShare(expense) {
+  const participants = expenseParticipants(expense);
+  return Number(expense.amount || 0) / Math.max(participants.length, 1);
 }
 
 function renderCleaning() {

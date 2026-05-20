@@ -2274,6 +2274,56 @@ body {
   min-width: 0;
 }
 
+.participant-box {
+  display: grid;
+  gap: 10px;
+}
+
+.participant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.participant-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: #fff7ed;
+  font-weight: 800;
+}
+
+.expense-summary {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--dash-line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff7ed, #ffffff);
+}
+
+.expense-summary h3 {
+  margin: 0 0 4px;
+}
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--dash-line);
+}
+
+.balance-row strong {
+  white-space: nowrap;
+}
+
 .file-input {
   position: absolute !important;
   inset: 0 auto auto 0;
