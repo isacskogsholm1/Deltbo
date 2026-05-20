@@ -21,12 +21,12 @@ const DEFAULT_MODULES = {
   conflict: true,
 };
 const MODULE_LABELS = {
-  expenses: "Utgifter",
-  cleaning: "Rengjøring",
+  expenses: "Utlegg",
+  cleaning: "Vask og oppgaver",
   shopping: "Handleliste",
   calendar: "Kalender",
   rules: "Husregler",
-  inventory: "Inventar",
+  inventory: "Felles ting",
   contacts: "Kontakter",
   conflict: "Saker",
 };
@@ -36,7 +36,7 @@ const DEFAULT_NOTIFICATIONS = {
   cleaning: true,
   messages: true,
 };
-const ALWAYS_ON_NOTIFICATIONS = ["rent", "crisis"];
+const ALWAYS_ON_NOTIFICATIONS = ["rent", "crisis", "conflict"];
 
 const storageAdapter = {
   loadAppState: () => safeJson(localStorage.getItem(STORAGE_KEY)) ?? safeJson(localStorage.getItem(LEGACY_STORAGE_KEY)),
@@ -104,10 +104,10 @@ let createMode = "paid";
 let activeTheme = localStorage.getItem(THEME_KEY) || "light";
 
 const demoScenes = [
-  ["Betal og opprett", "Admin godkjenner betaling og tar rom 1 i kollektivet."],
-  ["Inviter beboere", "Maria og Jonas fyller de to neste rommene via invitasjonslink."],
-  ["Legg ved kvitteringer", "Strøm, internett og felleskjøp får bilde eller PDF på samme linje."],
-  ["Hold flyten", "Oppgaver, handleliste og beskjeder oppdateres uten kaos i chatten."],
+  ["Start kollektivet", "Én person setter opp rom, betaling og invite-link."],
+  ["Få inn folk", "Beboerne lager egen bruker og får sin plass i oversikten."],
+  ["Legg inn utlegg", "Kvitteringer, summer og hvem som la ut ligger på samme sted."],
+  ["Dropp maset", "Vask, handleliste og beskjeder slipper å forsvinne i chatten."],
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -203,7 +203,7 @@ function handleClick(event) {
     "delete-message": () => removeById("messages", id, "Beskjed fjernet"),
     "delete-event": () => removeById("events", id, "Hendelse fjernet"),
     "delete-rule": () => removeById("rules", id, "Regel fjernet"),
-    "delete-inventory": () => removeById("inventory", id, "Inventar fjernet"),
+    "delete-inventory": () => removeById("inventory", id, "Ting fjernet"),
     "delete-contact": () => removeById("contacts", id, "Kontakt fjernet"),
     "resolve-conflict": () => updateById("conflicts", id, (item) => ({ ...item, resolved: !item.resolved })),
     "delete-conflict": () => removeById("conflicts", id, "Sak fjernet"),
@@ -259,7 +259,7 @@ function normalizeState(savedState) {
     members,
     expenses: normalizeCollection(merged.expenses, (expense) => ({
       id: expense.id ?? uid(),
-      title: expense.title ?? "Utgift",
+      title: expense.title ?? "Utlegg",
       amount: Number(expense.amount ?? 0),
       paidBy: expense.paidBy ?? members[0]?.name ?? "Admin",
       createdBy: expense.createdBy ?? expense.paidBy ?? members[0]?.name ?? "Admin",
@@ -293,10 +293,10 @@ function normalizeState(savedState) {
     notificationSettings: normalizeNotificationSettings(merged.notificationSettings),
     notifications: normalizeCollection(merged.notifications, (item) => ({
       id: item.id ?? uid(),
-      type: item.type ?? "messages",
+      type: item.type === "crisis" && item.title === "Ny sak" ? "conflict" : item.type ?? "messages",
       priority: item.priority ?? "normal",
       title: item.title ?? "Varsel",
-      text: item.text ?? "",
+      text: item.type === "crisis" && item.title === "Ny sak" ? "Noen har tatt opp noe anonymt i kollektivet." : item.text ?? "",
       createdAt: item.createdAt ?? isoNow(),
       read: Boolean(item.read),
     })),
@@ -509,17 +509,17 @@ function createHome(event) {
   const billing = isSupportCreate ? createSupportBilling() : collectBilling();
 
   if (!name || !adminUser || adminPass.length < 4) {
-    $("createError").textContent = "Fyll inn kollektivnavn, brukernavn og passord på minst 4 tegn.";
+    $("createError").textContent = "Fyll inn navn på kollektivet, brukernavn og et passord på minst 4 tegn.";
     return;
   }
 
   if (roomCount < 1) {
-    $("createError").textContent = "Kollektivet må ha minst ett rom.";
+    $("createError").textContent = "Dere må ha minst ett rom.";
     return;
   }
 
   if (firstMembers.length > Math.max(roomCount - 1, 0)) {
-    $("createError").textContent = `${roomCount} rom betyr maks ${roomCount} beboere totalt. Admin bruker rom 1, så legg inn maks ${Math.max(roomCount - 1, 0)} andre beboere.`;
+    $("createError").textContent = `${roomCount} rom betyr maks ${roomCount} personer totalt. Du bruker rom 1, så legg inn maks ${Math.max(roomCount - 1, 0)} andre.`;
     return;
   }
 
@@ -674,12 +674,12 @@ function renderCreateMode() {
   const isSupportCreate = createMode === "support" && session.role === "superadmin";
 
   $("createPricePill").textContent = isSupportCreate ? "Deltbo admin" : "99 kr/mnd";
-  $("createTitle").textContent = isSupportCreate ? "Opprett kollektiv som support" : "Opprett kollektiv";
+  $("createTitle").textContent = isSupportCreate ? "Opprett kollektiv som support" : "Start kollektiv";
   $("createIntro").textContent = isSupportCreate
     ? "Du oppretter et kollektiv fra Deltbo-adminpanelet. Admin bruker fortsatt rom 1."
-    : "Du blir admin og bruker ett av rommene. Medlemmer kommer inn via invitasjonslink.";
+    : "Du blir admin, tar ett rom og inviterer resten med link.";
   $("paymentPanel").classList.toggle("hidden", isSupportCreate);
-  $("createSubmit").textContent = isSupportCreate ? "Opprett fra support" : "Bekreft betaling og opprett";
+  $("createSubmit").textContent = isSupportCreate ? "Opprett fra support" : "Start kollektivet";
   $("createBackButton").textContent = isSupportCreate ? "Til adminpanel" : "Tilbake";
 }
 
@@ -1110,9 +1110,9 @@ async function addExpense(event) {
     receipt,
     createdAt: isoNow(),
   });
-  addNotification("expenses", isImportantExpense(title) ? "important" : "normal", "Ny utgift", `${currentUserName()} la inn ${title} på ${amount} kr.`);
+  addNotification("expenses", isImportantExpense(title) ? "important" : "normal", "Nytt utlegg", `${currentUserName()} la inn ${title} på ${amount} kr.`);
   clearFields("expenseTitle", "expenseAmount", "expenseReceipt");
-  saveState("Utgift lagt til");
+  saveState("Utlegg lagt til");
 }
 
 function addCleaningTask(event) {
@@ -1141,7 +1141,7 @@ async function addShoppingItem(event) {
   state.shopping.push({ id: uid(), item, quantity: value("shopQuantity"), done: false, receipt });
   addNotification("shopping", "low", "Handleliste", `${item} er lagt til på handlelisten.`);
   clearFields("shopItem", "shopQuantity", "shopReceipt");
-  saveState("Vare lagt til");
+  saveState("Lagt på handlelista");
 }
 
 function receiptFromFileInput(id) {
@@ -1197,7 +1197,7 @@ function addRule(event) {
 
   state.rules.push({ id: uid(), text });
   clearFields("ruleText");
-  saveState("Husregel lagt til");
+  saveState("Regel lagt til");
 }
 
 function addInventory(event) {
@@ -1207,7 +1207,7 @@ function addInventory(event) {
 
   state.inventory.push({ id: uid(), name, owner: value("inventoryOwner"), status: "OK" });
   clearFields("inventoryName", "inventoryOwner");
-  saveState("Inventar lagt til");
+  saveState("Ting lagt til");
 }
 
 function addContact(event) {
@@ -1226,7 +1226,7 @@ function addConflict(event) {
   if (!text) return;
 
   state.conflicts.unshift({ id: uid(), text, resolved: false, createdAt: isoNow() });
-  addNotification("crisis", "important", "Ny sak", "Det er sendt inn en ny anonym sak.");
+  addNotification("conflict", "important", "Ny sak", "Noen har tatt opp noe anonymt i kollektivet.");
   clearFields("conflictText");
   saveState("Anonym sak sendt");
 }
@@ -1266,8 +1266,12 @@ function quickAdd(event) {
   }
   if (type === "expense") {
     const amount = Number(value("quickAmount") || 0);
+    if (amount <= 0) {
+      showToast("Legg inn beløp for utlegget");
+      return;
+    }
     state.expenses.unshift({ id: uid(), title: text, amount, paidBy: currentUserName(), createdBy: currentUserName(), settled: false, receipt: null, createdAt: isoNow() });
-    addNotification("expenses", isImportantExpense(text) ? "important" : "normal", "Ny utgift", `${currentUserName()} la inn ${text} på ${amount} kr.`);
+    addNotification("expenses", isImportantExpense(text) ? "important" : "normal", "Nytt utlegg", `${currentUserName()} la inn ${text} på ${amount} kr.`);
   }
   if (type === "task") {
     state.cleaning.push({ id: uid(), title: text, assignee: currentUserName(), dueDate: todayPlus(7), done: false });
@@ -1312,7 +1316,7 @@ function deleteExpense(id) {
     return;
   }
 
-  removeById("expenses", id, "Utgift fjernet");
+  removeById("expenses", id, "Utlegg fjernet");
 }
 
 function archiveExpense(expense) {
@@ -1491,8 +1495,9 @@ function renderShell() {
   if (!state.home) return;
 
   const currentMember = getCurrentMember();
-  const profileName = currentMember?.name || currentUserName();
-  const profileRoom = currentMember?.room || (session.role === "support" ? "Supportvisning" : "Kollektiv");
+  const isSupportView = session.role === "support";
+  const profileName = isSupportView ? "Deltbo support" : currentMember?.name || currentUserName();
+  const profileRoom = isSupportView ? "Supportvisning" : currentMember?.room || "Kollektiv";
   $("dashName").textContent = state.home.name;
   $("sideName").textContent = state.home.name;
   $("inviteLink").value = state.home.inviteUrl;
@@ -1577,7 +1582,7 @@ function renderExpenses() {
     title: `${expense.title} • ${expense.amount} kr`,
     meta: `Betalt av ${expense.paidBy} • åpnet av ${expense.createdBy} • ${expense.settled ? "lukket" : "venter"} • ${expense.receipt ? `kvittering: ${expense.receipt.name}` : "ingen kvittering"}`,
     actions: `${receiptLink(expense.receipt)}${expense.createdBy === currentUserName() ? `${button("toggle-expense", expense.id, expense.settled ? "Åpne igjen" : "Lukk beløp", "secondary")}${button("delete-expense", expense.id, "Slett", "danger")}` : badge(`Lukkes av ${expense.createdBy}`)}`,
-  }), "Ingen utgifter enda.");
+  }), "Ingen utlegg enda.");
 }
 
 function renderCleaning() {
@@ -1736,10 +1741,11 @@ function notificationPriorityLabel(priority) {
 function notificationTypeLabel(type) {
   return {
     shopping: "Handleliste",
-    expenses: "Utgifter",
-    cleaning: "Oppgaver",
+    expenses: "Utlegg",
+    cleaning: "Vask og oppgaver",
     messages: "Beskjeder",
     rent: "Husleie",
+    conflict: "Sak",
     crisis: "Krise",
   }[type] ?? "Varsel";
 }
@@ -1833,7 +1839,11 @@ function digitsOnly(valueToClean) {
 
 function clearFields(...ids) {
   ids.forEach((id) => {
-    if ($(id)) $(id).value = "";
+    const field = $(id);
+    if (!field) return;
+
+    field.value = "";
+    if (field.dataset?.fileName) updateFileLabel(field);
   });
 }
 
@@ -1846,8 +1856,11 @@ function currentUserName() {
 }
 
 function getCurrentMember() {
+  if (session.role === "support") return null;
+
   const username = session.memberName || state.home?.adminUser || "";
-  return state.members.find((member) => member.name === username || member.username === username)
+  const normalized = username.toLowerCase();
+  return state.members.find((member) => member.name.toLowerCase() === normalized || member.username?.toLowerCase() === normalized)
     || state.members.find((member) => member.role === "admin")
     || null;
 }

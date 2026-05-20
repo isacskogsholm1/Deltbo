@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deltbo - kollektiv uten drama</title>
+  <title>Deltbo - få kollektivet til å funke</title>
   <link rel="stylesheet" href="styles.css" />
   <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
@@ -16,42 +16,42 @@
         <a href="#demo">Flyt</a>
         <a href="#price">Pris</a>
         <a href="#contact">Kontakt</a>
-        <button class="btn ghost" data-action="open-login">Login</button>
-        <button class="btn" data-action="show-create">Kom i gang</button>
+        <button class="btn ghost" data-action="open-login">Logg inn</button>
+        <button class="btn" data-action="show-create">Start kollektiv</button>
       </div>
     </div>
 
     <main class="wrap hero">
       <div>
-        <span class="pill">Deltbo Collective OS</span>
-        <h1>Et roligere system for alt dere deler.</h1>
-        <p>Deltbo samler betaling, rom, oppgaver, utgifter og viktige meldinger i ett kontrollrom for kollektivet. Mindre gruppechat-kaos, mer felles oversikt.</p>
+        <span class="pill">For kollektiv som faktisk skal funke</span>
+        <h1>Slutt å styre alt i gruppechatten.</h1>
+        <p>Deltbo samler husleie, utlegg, vask, handleliste og beskjeder på ett sted. Perfekt når fem folk, fire timeplaner og én litt full fryser skal gå opp.</p>
         <div class="actions">
-          <button class="btn" data-action="show-create">Betal og opprett kollektiv</button>
-          <button class="btn secondary" data-action="scroll-demo">Utforsk flyten</button>
+          <button class="btn" data-action="show-create">Start for 99 kr/mnd</button>
+          <button class="btn secondary" data-action="scroll-demo">Se hvordan det funker</button>
         </div>
         <div class="hero-proof">
           <span>99 kr/mnd</span>
-          <span>Tomt oppsett fra start</span>
-          <span>Roller og ansvar samlet</span>
+          <span>Ingen fake eksempelrot</span>
+          <span>Alle vet hvem som gjør hva</span>
         </div>
       </div>
 
       <div class="phone hero-card">
         <div class="phone-top">
-          <b>Deltbo Control</b>
+          <b>Kollektivstatus</b>
           <span class="live-dot">Online</span>
         </div>
         <div class="room-strip">
           <span>Rom<br><b>3 / 3</b></span>
-          <span>Varsler<br><b>2 nye</b></span>
+          <span>Beskjeder<br><b>2 nye</b></span>
           <span>Status<br><b>Synket</b></span>
         </div>
         <div class="mini-grid">
-          <div class="tile"><span class="ico">01</span><b>Utgifter</b><span class="muted">Opprettet av riktig person</span></div>
-          <div class="tile"><span class="ico">02</span><b>Medlemmer</b><span class="muted">Rom, roller og tilgang</span></div>
-          <div class="tile"><span class="ico">03</span><b>Meldinger</b><span class="muted">Alltid i sidepanelet</span></div>
-          <div class="tile"><span class="ico">04</span><b>Historikk</b><span class="muted">Lukkede oppgjør arkiveres</span></div>
+          <div class="tile"><span class="ico">01</span><b>Utlegg</b><span class="muted">Den som la det inn kan lukke</span></div>
+          <div class="tile"><span class="ico">02</span><b>Folk</b><span class="muted">Rom, roller og invites</span></div>
+          <div class="tile"><span class="ico">03</span><b>Beskjeder</b><span class="muted">Synlig uansett fane</span></div>
+          <div class="tile"><span class="ico">04</span><b>Historikk</b><span class="muted">Gamle oppgjør ligger trygt</span></div>
         </div>
       </div>
     </main>
@@ -59,21 +59,21 @@
     <section class="demo-band" id="demo">
       <div class="wrap demo-layout">
         <div>
-          <span class="pill">Live arbeidsflate</span>
-          <h2>En felles oversikt som ikke starter med rot.</h2>
-          <p>Admin oppretter kollektivet rent, inviterer beboere og bygger innholdet etter hvert. Sidepanelet holder viktige meldinger synlige mens hovedfanen byttes mellom arbeidene deres.</p>
+          <span class="pill">Dashboard for hverdagen</span>
+          <h2>Alt det kjedelige, uten at det blir kleint.</h2>
+          <p>Legg inn utlegg, fordel vask, del handleliste og send beskjeder som ikke drukner mellom memes og helgeplaner.</p>
           <div class="inline-actions">
             <button class="btn" data-action="toggle-demo" id="demoToggle">Pause demo</button>
-            <button class="btn secondary" data-action="restart-demo">Start på nytt</button>
+            <button class="btn secondary" data-action="restart-demo">Se igjen</button>
           </div>
         </div>
         <div class="demo-player" id="demoPlayer" aria-label="AI-generert demo av Deltbo">
           <div class="promo-video-frame">
             <img src="assets/deltbo-ai-promo.png" alt="Personer som bruker Deltbo sammen" />
             <div class="video-glass-card">
-              <span>Live samkjøring</span>
-              <b>3 beboere aktive</b>
-              <small>Utgifter, kvitteringer og vask oppdateres</small>
+              <span>Live oversikt</span>
+              <b>3 beboere inne</b>
+              <small>Utlegg, vask og beskjeder oppdateres fortløpende</small>
             </div>
             <div class="play-indicator" aria-hidden="true"></div>
           </div>
@@ -91,8 +91,8 @@
             <div class="sync-line sync-two"></div>
           </div>
           <div class="demo-caption">
-            <b id="demoSceneTitle">Opprett kollektiv</b>
-            <span id="demoSceneText">Admin velger betaling, lager kollektiv og får invitasjonslink.</span>
+            <b id="demoSceneTitle">Start kollektivet</b>
+            <span id="demoSceneText">Admin starter kollektivet og deler invitasjonslink.</span>
           </div>
           <div class="demo-progress"><span id="demoProgress"></span></div>
         </div>
@@ -101,43 +101,43 @@
 
     <section class="sections" id="features">
       <div class="wrap features">
-        <div class="feature"><span class="ico">01</span><h3>Rent fra start</h3><p>Nye kollektiv opprettes uten eksempeldata som kan forvirre ansvar og lukking.</p></div>
-        <div class="feature"><span class="ico">02</span><h3>Én valgt fane</h3><p>Velg utgifter, medlemmer, vask eller historikk fra dropdownen i dashboardet.</p></div>
-        <div class="feature"><span class="ico">03</span><h3>Sidepanel</h3><p>Viktige meldinger og varsler blir stående mens hovedfanen endres.</p></div>
-        <div class="feature"><span class="ico">04</span><h3>Ansvar</h3><p>Utgifter knyttes til den som opprettet dem, slik at riktig person kan lukke.</p></div>
-        <div class="feature"><span class="ico">05</span><h3>Rolig flyt</h3><p>Hverdagsoppgaver samles i et tydelig system fremfor å forsvinne i chat.</p></div>
+        <div class="feature"><span class="ico">01</span><h3>Start blankt</h3><p>Ingen eksempelutlegg som roter til hvem som eier hva.</p></div>
+        <div class="feature"><span class="ico">02</span><h3>Finn ting kjapt</h3><p>Bytt mellom medlemmer, utlegg, vask og regler fra én enkel meny.</p></div>
+        <div class="feature"><span class="ico">03</span><h3>Beskjeder som synes</h3><p>Viktige meldinger ligger ved siden av, ikke femti meldinger opp i chatten.</p></div>
+        <div class="feature"><span class="ico">04</span><h3>Riktig ansvar</h3><p>Den som legger inn et utlegg styrer om det skal lukkes eller slettes.</p></div>
+        <div class="feature"><span class="ico">05</span><h3>Mindre mas</h3><p>Vask, dopapir, utlegg og husregler får en fast plass.</p></div>
       </div>
     </section>
 
     <section class="wrap bottom" id="price">
       <div>
-        <h2>Slik fungerer det</h2>
+        <h2>Slik kommer dere i gang</h2>
         <div class="steps">
-          <div class="step"><span class="num">1</span><div><b>Betal først</b><p>Kollektivet opprettes først når betalingsinformasjon er fylt ut og bekreftet.</p></div></div>
-          <div class="step"><span class="num">2</span><div><b>Admin tar ett rom</b><p>Tre rom betyr admin pluss to andre beboere, ikke fire brukere.</p></div></div>
-          <div class="step"><span class="num">3</span><div><b>Samle alt etterpå</b><p>Utgifter, handleliste, kvitteringer, vask og beskjeder ligger i dashboardet.</p></div></div>
+          <div class="step"><span class="num">1</span><div><b>Start kollektivet</b><p>En person setter opp navn, rom og betaling. Ferdig på et par minutter.</p></div></div>
+          <div class="step"><span class="num">2</span><div><b>Inviter resten</b><p>Send linken til de du bor med. De lager sin egen bruker og får sitt rom.</p></div></div>
+          <div class="step"><span class="num">3</span><div><b>Bruk det i hverdagen</b><p>Legg inn utlegg, vask, handleliste og beskjeder når ting dukker opp.</p></div></div>
         </div>
       </div>
       <div class="price">
-        <h2>Alt inkludert</h2>
+        <h2>Alt dere trenger</h2>
         <strong>99 kr</strong> <span class="green">/mnd</span>
         <p>per kollektiv</p>
         <ul>
-          <li>Betaling før opprettelse</li>
-          <li>Romoversikt der admin teller med</li>
-          <li>Utgifter, handleliste og kvitteringer</li>
-          <li>Kalender, husregler, inventar og kontakter</li>
-          <li>Anonym konfliktløser</li>
+          <li>Utlegg med kvittering</li>
+          <li>Medlemmer, rom og invitasjoner</li>
+          <li>Vask, handleliste og kalender</li>
+          <li>Husregler, inventar og kontakter</li>
+          <li>Anonyme saker når noe må sies</li>
         </ul>
-        <button class="btn" data-action="show-create">Opprett kollektiv</button>
+        <button class="btn" data-action="show-create">Start kollektivet</button>
       </div>
     </section>
 
     <section class="wrap contact-section" id="contact">
       <div>
-        <span class="pill">KI-sortert support</span>
-        <h2>Kontakt oss</h2>
-        <p>Send inn spørsmål, feil eller ønsker. Deltbo sin lokale KI-sortering lager kategori, prioritet og kort oppsummering som vises i admin.</p>
+        <span class="pill">Send oss en melding</span>
+        <h2>Noe som burde funke bedre?</h2>
+        <p>Tips oss om bugs, betaling, ønsker eller ting som føles tungvint. Vi sorterer det og følger opp.</p>
       </div>
       <form id="publicContactForm" class="card contact-card">
         <div class="field-grid">
@@ -183,7 +183,7 @@
             <span class="muted">Support, rydding og feilsøking</span>
           </div>
           <div class="topbar-actions">
-            <button class="btn" data-action="show-owner-create">Opprett kollektiv</button>
+            <button class="btn" data-action="show-owner-create">Start kollektiv</button>
             <button class="btn secondary" data-action="refresh-superadmin">Oppdater liste</button>
           </div>
         </div>
@@ -214,47 +214,47 @@
       <form id="createForm" class="card form">
         <div class="form-head">
           <span class="pill" id="createPricePill">99 kr/mnd</span>
-          <h1 id="createTitle">Opprett kollektiv</h1>
-          <p id="createIntro">Du blir admin og bruker ett av rommene. Medlemmer kommer inn via invitasjonslink.</p>
+          <h1 id="createTitle">Start kollektiv</h1>
+          <p id="createIntro">Du blir admin, tar ett rom og inviterer resten med link.</p>
         </div>
 
         <div class="field-grid">
           <div>
-            <label for="homeName">Navn på kollektiv</label>
-            <input id="homeName" name="homeName" placeholder="Navn på kollektivet" autocomplete="organization" required />
+            <label for="homeName">Hva heter stedet?</label>
+            <input id="homeName" name="homeName" placeholder="Kollektivnavn" autocomplete="organization" required />
           </div>
           <div>
-            <label for="homeAddress">Adresse</label>
+            <label for="homeAddress">Hvor bor dere?</label>
             <input id="homeAddress" name="homeAddress" placeholder="Adresse" autocomplete="street-address" />
           </div>
           <div>
-            <label for="roomCount">Antall rom totalt</label>
+            <label for="roomCount">Hvor mange rom?</label>
             <input id="roomCount" name="roomCount" inputmode="numeric" value="3" />
-            <p class="field-hint">Admin bruker ett rom. 3 rom betyr admin + 2 beboere.</p>
+            <p class="field-hint">Admin teller med. 3 rom betyr deg + 2 andre.</p>
           </div>
           <div>
-            <label for="rentAmount">Månedsleie totalt</label>
+            <label for="rentAmount">Husleie totalt</label>
             <input id="rentAmount" name="rentAmount" inputmode="numeric" placeholder="Månedsleie" />
           </div>
           <div>
-            <label for="adminUser">Admin brukernavn</label>
+            <label for="adminUser">Ditt brukernavn</label>
             <input id="adminUser" name="adminUser" placeholder="Brukernavn" autocomplete="username" required />
           </div>
           <div>
-            <label for="adminPass">Admin passord</label>
+            <label for="adminPass">Lag admin-passord</label>
             <input id="adminPass" name="adminPass" type="password" placeholder="Minst 4 tegn" autocomplete="new-password" minlength="4" required />
           </div>
         </div>
 
-        <label for="firstMembers">Andre beboere du vil legge inn nå</label>
-        <input id="firstMembers" name="firstMembers" placeholder="Navn adskilt med komma" />
-        <p class="field-hint">Ikke legg inn admin her. Admin blir automatisk rom 1.</p>
+        <label for="firstMembers">Hvem bor der med deg?</label>
+        <input id="firstMembers" name="firstMembers" placeholder="Navn med komma mellom" />
+        <p class="field-hint">Ikke skriv deg selv her. Du blir lagt inn automatisk.</p>
 
         <div class="payment-panel" id="paymentPanel" aria-labelledby="paymentTitle">
           <div class="payment-head">
             <div>
-              <h2 id="paymentTitle">Betaling kreves</h2>
-              <p>Velg betalingsmetode og bekreft betaling før kollektivet opprettes.</p>
+              <h2 id="paymentTitle">Betaling</h2>
+              <p>Velg hvordan dere vil betale for Deltbo.</p>
             </div>
             <span class="badge">99 kr/mnd</span>
           </div>
@@ -294,15 +294,15 @@
           </div>
           <label class="checkline">
             <input id="paymentConfirmed" type="checkbox" />
-            <span>Jeg bekrefter at betaling på 99 kr/mnd er godkjent før kollektivet opprettes.</span>
+            <span>Jeg bekrefter at betaling på 99 kr/mnd er godkjent.</span>
           </label>
         </div>
         <p id="createError" class="small error" role="alert"></p>
-        <button class="btn" id="createSubmit" type="submit">Bekreft betaling og opprett</button>
+        <button class="btn" id="createSubmit" type="submit">Start kollektivet</button>
 
         <div id="createdBox" class="linkbox">
-          <b>Kollektiv opprettet</b>
-          <p>Del denne linken med de du bor med:</p>
+          <b>Kollektivet er klart</b>
+          <p>Del linken med de du bor med:</p>
           <input id="inviteLink" readonly />
           <div class="inline-actions">
             <button class="btn secondary" type="button" data-action="copy-invite">Kopier link</button>
@@ -321,7 +321,7 @@
     <main class="wrap create-wrap">
       <form id="joinForm" class="card form">
         <h1>Bli med i kollektivet</h1>
-        <p id="joinIntro">Du har fått en invitasjon til Deltbo.</p>
+        <p id="joinIntro">Lag din egen bruker og få rommet ditt inn i oversikten.</p>
         <label for="memberName">Fornavn</label>
         <input id="memberName" name="memberName" placeholder="Fornavn" autocomplete="name" required />
         <input id="memberRoom" name="memberRoom" class="hidden" />
@@ -361,16 +361,16 @@
             <span id="dashRole" class="muted">Dashboard</span>
           </div>
           <div class="dashboard-picker">
-            <label for="dashboardViewSelect">Visning</label>
+            <label for="dashboardViewSelect">Hva vil du se?</label>
             <select id="dashboardViewSelect">
               <option value="home">Hjem</option>
               <option value="members">Medlemmer</option>
-              <option value="expenses">Utgifter</option>
-              <option value="cleaning">Rengjøring</option>
+              <option value="expenses">Utlegg</option>
+              <option value="cleaning">Vask og oppgaver</option>
               <option value="shopping">Handleliste</option>
               <option value="calendar">Kalender</option>
               <option value="rules">Husregler</option>
-              <option value="inventory">Inventar</option>
+              <option value="inventory">Felles ting</option>
               <option value="contacts">Kontakter</option>
               <option value="conflict">Saker</option>
               <option value="history">Historikk</option>
@@ -379,8 +379,8 @@
           </div>
           <div class="inline-actions">
             <button id="themeToggle" class="btn secondary" data-action="toggle-theme" type="button">Mørk modus</button>
-            <button id="inviteButton" class="btn secondary" data-action="copy-invite">Kopier felles invitasjon</button>
-            <button class="btn" data-action="show-quick-add">Legg til</button>
+            <button id="inviteButton" class="btn secondary" data-action="copy-invite">Kopier invite</button>
+            <button class="btn" data-action="show-quick-add">Legg inn noe</button>
           </div>
         </div>
 
@@ -388,7 +388,7 @@
           <section class="dashboard-primary">
         <div id="tab-home" class="tabview">
           <div class="cards">
-            <div class="card stat"><span class="muted">Totale utgifter</span><h2 id="totalExpenses">0 kr</h2></div>
+            <div class="card stat"><span class="muted">Totale utlegg</span><h2 id="totalExpenses">0 kr</h2></div>
             <div class="card stat"><span class="muted">Din andel</span><h2 id="yourShare">0 kr</h2></div>
             <div class="card stat"><span class="muted">Neste oppgave</span><h2 id="nextClean">Ingen</h2></div>
             <div class="card stat"><span class="muted">Kvitteringer</span><h2 id="receiptCount">0</h2></div>
@@ -408,10 +408,10 @@
               <div id="memberList" class="list"></div>
             </div>
             <form id="memberForm" class="card">
-              <h3>Inviter beboer</h3>
+              <h3>Legg til beboer</h3>
               <input id="memberManualName" placeholder="Fornavn" />
               <input id="memberManualRoom" placeholder="Rom valgfritt" />
-              <button class="btn" type="submit">Legg til og lag invitasjon</button>
+              <button class="btn" type="submit">Legg til og lag link</button>
             </form>
           </div>
         </div>
@@ -419,12 +419,12 @@
         <div id="tab-expenses" class="tabview hidden">
           <div class="split">
             <div class="card">
-              <h2>Utgifter</h2>
+              <h2>Utlegg</h2>
               <div id="expenseList" class="list"></div>
             </div>
             <form id="expenseForm" class="card">
-              <h3>Ny utgift</h3>
-              <input id="expenseTitle" placeholder="Hva er betalt?" />
+              <h3>Nytt utlegg</h3>
+              <input id="expenseTitle" placeholder="Hva la du ut for?" />
               <input id="expenseAmount" inputmode="numeric" placeholder="Beløp" />
               <select id="expensePaidBy"></select>
               <label class="upload-card" for="expenseReceipt">
@@ -435,7 +435,7 @@
                   <small id="expenseReceiptName">Bilde eller PDF, valgfritt</small>
                 </span>
               </label>
-              <button class="btn" type="submit">Legg til utgift</button>
+              <button class="btn" type="submit">Legg til utlegg</button>
             </form>
           </div>
         </div>
@@ -443,12 +443,12 @@
         <div id="tab-cleaning" class="tabview hidden">
           <div class="split">
             <div class="card">
-              <h2>Rengjøring og oppgaver</h2>
+              <h2>Vask og oppgaver</h2>
               <div id="cleanList" class="list"></div>
             </div>
             <form id="cleanForm" class="card">
-              <h3>Ny oppgave</h3>
-              <input id="cleanTitle" placeholder="Oppgave" />
+              <h3>Ny vask/oppgave</h3>
+              <input id="cleanTitle" placeholder="Hva må gjøres?" />
               <select id="cleanAssignee"></select>
               <input id="cleanDue" type="date" />
               <button class="btn" type="submit">Legg til oppgave</button>
@@ -459,12 +459,12 @@
         <div id="tab-shopping" class="tabview hidden">
           <div class="split">
             <div class="card">
-              <h2>Delt handleliste</h2>
+              <h2>Handlelista</h2>
               <div id="shopList" class="list"></div>
             </div>
             <form id="shopForm" class="card">
               <h3>Legg til vare</h3>
-              <input id="shopItem" placeholder="Vare" />
+              <input id="shopItem" placeholder="Hva mangler?" />
               <input id="shopQuantity" placeholder="Antall" />
               <label class="upload-card" for="shopReceipt">
                 <input id="shopReceipt" class="file-input" type="file" accept="image/*,.pdf" data-file-name="shopReceiptName" />
@@ -487,7 +487,7 @@
             </div>
             <form id="eventForm" class="card">
               <h3>Ny hendelse</h3>
-              <input id="eventTitle" placeholder="Hendelse" />
+              <input id="eventTitle" placeholder="Hva skjer?" />
               <input id="eventDate" type="date" />
               <button class="btn" type="submit">Legg til</button>
             </form>
@@ -502,7 +502,7 @@
             </div>
             <form id="ruleForm" class="card">
               <h3>Ny regel</h3>
-              <textarea id="ruleText" placeholder="Skriv en tydelig husregel"></textarea>
+              <textarea id="ruleText" placeholder="Skriv regelen slik dere faktisk ville sagt den"></textarea>
               <button class="btn" type="submit">Legg til regel</button>
             </form>
           </div>
@@ -511,12 +511,12 @@
         <div id="tab-inventory" class="tabview hidden">
           <div class="split">
             <div class="card">
-              <h2>Inventar og felles ting</h2>
+              <h2>Felles ting</h2>
               <div id="inventoryList" class="list"></div>
             </div>
             <form id="inventoryForm" class="card">
               <h3>Ny ting</h3>
-              <input id="inventoryName" placeholder="Ting" />
+              <input id="inventoryName" placeholder="Hva eier dere sammen?" />
               <input id="inventoryOwner" placeholder="Eier eller plassering" />
               <button class="btn" type="submit">Legg til</button>
             </form>
@@ -531,7 +531,7 @@
             </div>
             <form id="contactForm" class="card">
               <h3>Ny kontakt</h3>
-              <input id="contactName" placeholder="Navn" />
+              <input id="contactName" placeholder="Hvem er det?" />
               <input id="contactValue" placeholder="Telefon, e-post eller lenke" />
               <button class="btn" type="submit">Legg til</button>
             </form>
@@ -541,13 +541,13 @@
         <div id="tab-conflict" class="tabview hidden">
           <div class="split">
             <div class="card">
-              <h2>Anonyme saker</h2>
-              <p>Skriv inn et problem. Det vises uten navn, slik at dere kan løse ting rolig.</p>
+              <h2>Ta opp noe</h2>
+              <p>Noe som er vanskelig å si i chatten? Send det anonymt, så kan dere rydde opp rolig.</p>
               <div id="conflictList" class="list"></div>
             </div>
             <form id="conflictForm" class="card">
-              <h3>Ny sak</h3>
-              <textarea id="conflictText" placeholder="Skriv saken kort"></textarea>
+              <h3>Ny anonym sak</h3>
+              <textarea id="conflictText" placeholder="Hva skjer, kort og rolig?"></textarea>
               <button class="btn" type="submit">Send anonymt</button>
             </form>
           </div>
@@ -573,12 +573,12 @@
             <div class="settings-section">
               <h3>Moduler</h3>
               <div class="module-grid">
-                <label class="checkline"><input type="checkbox" data-module-setting="expenses" /> Utgifter</label>
-                <label class="checkline"><input type="checkbox" data-module-setting="cleaning" /> Rengjøring</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="expenses" /> Utlegg</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="cleaning" /> Vask og oppgaver</label>
                 <label class="checkline"><input type="checkbox" data-module-setting="shopping" /> Handleliste</label>
                 <label class="checkline"><input type="checkbox" data-module-setting="calendar" /> Kalender</label>
                 <label class="checkline"><input type="checkbox" data-module-setting="rules" /> Husregler</label>
-                <label class="checkline"><input type="checkbox" data-module-setting="inventory" /> Inventar</label>
+                <label class="checkline"><input type="checkbox" data-module-setting="inventory" /> Felles ting</label>
                 <label class="checkline"><input type="checkbox" data-module-setting="contacts" /> Kontakter</label>
                 <label class="checkline"><input type="checkbox" data-module-setting="conflict" /> Saker</label>
               </div>
@@ -587,8 +587,8 @@
               <h3>Varsler</h3>
               <div class="module-grid">
                 <label class="checkline"><input type="checkbox" data-notification-setting="shopping" /> Handleliste</label>
-                <label class="checkline"><input type="checkbox" data-notification-setting="expenses" /> Utgifter og oppgjør</label>
-                <label class="checkline"><input type="checkbox" data-notification-setting="cleaning" /> Rengjøring</label>
+                <label class="checkline"><input type="checkbox" data-notification-setting="expenses" /> Utlegg og oppgjør</label>
+                <label class="checkline"><input type="checkbox" data-notification-setting="cleaning" /> Vask og oppgaver</label>
                 <label class="checkline"><input type="checkbox" data-notification-setting="messages" /> Beskjeder</label>
                 <label class="checkline locked"><input type="checkbox" checked disabled /> Husleie, brannalarm og kriser</label>
               </div>
@@ -612,13 +612,13 @@
         <section class="side-panel important-messages">
           <div class="notification-head">
             <div>
-              <h3>Viktige meldinger</h3>
-              <span class="muted">Synlig uansett fane</span>
+              <h3>Beskjeder</h3>
+              <span class="muted">Synlig uansett hvor du er</span>
             </div>
           </div>
           <div id="messageList" class="list"></div>
           <div class="input-row">
-            <input id="messageText" placeholder="Skriv en beskjed" />
+            <input id="messageText" placeholder="Hva bør alle få med seg?" />
             <button class="btn" data-action="add-message">Send</button>
           </div>
         </section>
@@ -631,15 +631,15 @@
   <div id="quickAdd" class="modal" role="dialog" aria-modal="true" aria-labelledby="quickAddTitle">
     <form id="quickAddForm" class="card">
       <button class="close" type="button" data-action="close-quick-add">×</button>
-      <h2 id="quickAddTitle">Legg til raskt</h2>
+      <h2 id="quickAddTitle">Legg inn kjapt</h2>
       <select id="quickType">
         <option value="shopping">Handleliste</option>
         <option value="message">Beskjed</option>
-        <option value="expense">Utgift</option>
+        <option value="expense">Utlegg</option>
         <option value="task">Oppgave</option>
       </select>
-      <input id="quickText" placeholder="Hva vil du legge til?" />
-      <input id="quickAmount" inputmode="numeric" placeholder="Beløp hvis utgift" />
+      <input id="quickText" placeholder="Hva gjelder det?" />
+      <input id="quickAmount" inputmode="numeric" placeholder="Beløp hvis utlegg" />
       <button class="btn" type="submit">Legg til</button>
     </form>
   </div>
@@ -647,11 +647,11 @@
   <div id="loginModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <form id="loginForm" class="card">
       <button class="close" type="button" data-action="close-login">×</button>
-      <h2 id="loginTitle">Login</h2>
-      <p>Logg inn som admin, medlem eller intern Deltbo-bruker.</p>
+      <h2 id="loginTitle">Logg inn</h2>
+      <p>Gå inn som admin, beboer eller Deltbo support.</p>
       <input id="loginUser" placeholder="Brukernavn" autocomplete="username" />
       <input id="loginPass" type="password" placeholder="Passord" autocomplete="current-password" />
-      <button class="btn" type="submit">Login</button>
+      <button class="btn" type="submit">Logg inn</button>
       <p id="loginError" class="small error" role="alert"></p>
     </form>
   </div>

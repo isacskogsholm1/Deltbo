@@ -2663,6 +2663,21 @@ body[data-theme="dark"] .notification-center {
   border-color: var(--dash-line);
 }
 
+body[data-theme="dark"] .profile-card strong,
+body[data-theme="dark"] .upload-card strong {
+  color: var(--txt);
+}
+
+body[data-theme="dark"] .member-card.is-current {
+  background: #172313;
+  border-color: #3e612c;
+}
+
+body[data-theme="dark"] .upload-icon {
+  background: #172313;
+  color: #bffb76;
+}
+
 body[data-theme="dark"] .notification-row.priority-important,
 body[data-theme="dark"] .notification-row.priority-critical {
   background: #1f1a13;
