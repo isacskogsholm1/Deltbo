@@ -132,6 +132,8 @@ function bindUi() {
   document.querySelectorAll('input[name="paymentMethod"]').forEach((input) => {
     input.addEventListener("change", renderPaymentFields);
   });
+  $("dashboardViewSelect")?.addEventListener("change", (event) => openTab(event.target.value));
+  document.querySelectorAll(".file-input").forEach((input) => input.addEventListener("change", () => updateFileLabel(input)));
   $("memberForm").addEventListener("submit", addMember);
   $("expenseForm").addEventListener("submit", addExpense);
   $("cleanForm").addEventListener("submit", addCleaningTask);
@@ -543,7 +545,6 @@ function createHome(event) {
   ];
 
   state = normalizeState({
-    ...demoData,
     home: {
       id: uid(),
       name,
@@ -561,6 +562,19 @@ function createHome(event) {
       createdBy: isSupportCreate ? "Deltbo admin" : "customer",
     },
     members,
+    expenses: [],
+    cleaning: [],
+    shopping: [],
+    messages: [],
+    events: [],
+    rules: [],
+    inventory: [],
+    contacts: [],
+    conflicts: [],
+    modules: DEFAULT_MODULES,
+    notificationSettings: DEFAULT_NOTIFICATIONS,
+    notifications: [],
+    history: [],
   });
   state.home.inviteUrl = createInviteUrl(inviteToken);
 
@@ -1476,9 +1490,15 @@ function render() {
 function renderShell() {
   if (!state.home) return;
 
+  const currentMember = getCurrentMember();
+  const profileName = currentMember?.name || currentUserName();
+  const profileRoom = currentMember?.room || (session.role === "support" ? "Supportvisning" : "Kollektiv");
   $("dashName").textContent = state.home.name;
   $("sideName").textContent = state.home.name;
   $("inviteLink").value = state.home.inviteUrl;
+  $("profileInitials").textContent = initials(profileName);
+  $("profileName").textContent = profileName;
+  $("profileRoom").textContent = profileRoom;
   $("accountRole").textContent = session.role === "member"
     ? `Medlem: ${session.memberName}`
     : session.role === "support"
@@ -1549,13 +1569,7 @@ function renderHome() {
 }
 
 function renderMembers() {
-  $("memberList").innerHTML = state.members.map((member) => row({
-    title: member.name,
-    meta: `${member.role === "admin" ? "Admin" : "Invitert medlem"}${member.room ? ` • ${member.room}` : ""}${member.role !== "admin" ? ` • ${member.username ? "konto opprettet" : "venter på konto"}` : ""}`,
-    actions: member.role === "admin"
-      ? badge("Admin")
-      : button("copy-member-invite", member.id, "Kopier invitasjon", "secondary"),
-  })).join("");
+  $("memberList").innerHTML = state.members.map((member) => memberCard(member)).join("");
 }
 
 function renderExpenses() {
@@ -1696,13 +1710,17 @@ function renderModuleVisibility() {
   Object.keys(DEFAULT_MODULES).forEach((moduleName) => {
     const enabled = state.modules?.[moduleName] !== false;
     document.querySelectorAll(`[data-tab="${moduleName}"]`).forEach((buttonElement) => buttonElement.classList.toggle("hidden", !enabled));
+    const option = $(`dashboardViewSelect`)?.querySelector(`option[value="${moduleName}"]`);
+    if (option) {
+      option.hidden = !enabled;
+      option.disabled = !enabled;
+    }
     $(`tab-${moduleName}`)?.classList.toggle("module-disabled", !enabled);
   });
 
-  const activeButton = document.querySelector(".menu button.active");
-  const activeTab = activeButton?.dataset.tab;
+  const activeTab = $("dashboardViewSelect")?.value;
   if (activeTab && state.modules?.[activeTab] === false) {
-    openTab("home", document.querySelector('[data-tab="home"]'));
+    openTab("home");
   }
 }
 
@@ -1786,19 +1804,18 @@ function paymentLabel(method) {
   }[method] ?? method;
 }
 
-function openTab(name, button) {
+function openTab(name) {
   if (state.modules?.[name] === false) {
     showToast(`${MODULE_LABELS[name]} er skrudd av i innstillingene`);
     return;
   }
 
   const tab = $(`tab-${name}`);
-  if (!tab || !button) return;
+  if (!tab) return;
 
   document.querySelectorAll(".tabview").forEach((tabView) => tabView.classList.add("hidden"));
   tab.classList.remove("hidden");
-  document.querySelectorAll(".menu button").forEach((menuButton) => menuButton.classList.remove("active"));
-  button.classList.add("active");
+  if ($("dashboardViewSelect")) $("dashboardViewSelect").value = name;
 }
 
 function value(id) {
@@ -1828,8 +1845,54 @@ function currentUserName() {
   return session.memberName || state.home?.adminUser || state.members[0]?.name || "Deltbo";
 }
 
+function getCurrentMember() {
+  const username = session.memberName || state.home?.adminUser || "";
+  return state.members.find((member) => member.name === username || member.username === username)
+    || state.members.find((member) => member.role === "admin")
+    || null;
+}
+
+function initials(name) {
+  return String(name || "Deltbo")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "DB";
+}
+
+function updateFileLabel(input) {
+  const label = $(input.dataset.fileName);
+  if (!label) return;
+
+  label.textContent = input.files?.[0]?.name || "Bilde eller PDF, valgfritt";
+}
+
 function emptyOrRows(collection, mapItem, emptyText) {
   return collection.length ? collection.map(mapItem).join("") : `<p class="muted">${emptyText}</p>`;
+}
+
+function memberCard(member) {
+  const isCurrent = member.name === currentUserName() || member.username === currentUserName();
+  const status = member.role === "admin"
+    ? "Admin"
+    : member.username
+      ? "Konto opprettet"
+      : "Venter på konto";
+  const actions = member.role === "admin"
+    ? badge("Admin")
+    : button("copy-member-invite", member.id, "Kopier invitasjon", "secondary");
+
+  return `
+    <div class="row member-card ${isCurrent ? "is-current" : ""}">
+      <span class="member-avatar">${escapeHtml(initials(member.name))}</span>
+      <div class="row-main">
+        <span class="row-title">${escapeHtml(member.name)}</span>
+        <span class="row-meta">${escapeHtml(`${status}${member.room ? ` • ${member.room}` : ""}${isCurrent ? " • deg" : ""}`)}</span>
+      </div>
+      <div class="row-actions">${actions}</div>
+    </div>
+  `;
 }
 
 function row({ title, meta, actions = "" }) {
