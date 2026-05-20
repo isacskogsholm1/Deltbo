@@ -2092,6 +2092,32 @@ body {
   box-shadow: 0 12px 26px #f9731630;
 }
 
+.home-photo-card {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7ed, #ffffff);
+}
+
+.home-photo-card img {
+  width: 92px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--dash-line);
+}
+
+.home-photo-card strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--dash-ink);
+}
+
 .profile-card strong,
 .profile-card small {
   display: block;
@@ -2298,6 +2324,17 @@ body {
   color: #397913;
   font-size: 13px;
   font-weight: 950;
+  background-size: cover;
+  background-position: center;
+}
+
+.upload-icon.has-image {
+  color: transparent;
+  text-shadow: none;
+}
+
+.image-upload-preview {
+  overflow: hidden;
 }
 
 .upload-card strong,

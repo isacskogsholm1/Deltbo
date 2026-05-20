@@ -325,6 +325,8 @@
         <label for="memberName">Fornavn</label>
         <input id="memberName" name="memberName" placeholder="Fornavn" autocomplete="name" required />
         <input id="memberRoom" name="memberRoom" class="hidden" />
+        <label for="memberNickname">Kallenavn</label>
+        <input id="memberNickname" name="memberNickname" placeholder="Hva vil du bli kalt?" autocomplete="nickname" />
         <label for="memberUsername">Lag brukernavn</label>
         <input id="memberUsername" name="memberUsername" placeholder="Brukernavn" autocomplete="username" required />
         <label for="memberPassword">Lag passord</label>
@@ -410,6 +412,7 @@
             <form id="memberForm" class="card">
               <h3>Legg til beboer</h3>
               <input id="memberManualName" placeholder="Fornavn" />
+              <input id="memberManualNickname" placeholder="Kallenavn valgfritt" />
               <input id="memberManualRoom" placeholder="Rom valgfritt" />
               <button class="btn" type="submit">Legg til og lag link</button>
             </form>
@@ -569,7 +572,16 @@
               <div><label for="settingsAddress">Adresse</label><input id="settingsAddress" /></div>
               <div><label for="settingsRent">Månedsleie totalt</label><input id="settingsRent" inputmode="numeric" /></div>
               <div><label for="settingsRooms">Antall rom</label><input id="settingsRooms" inputmode="numeric" /></div>
+              <div><label for="settingsNickname">Ditt kallenavn</label><input id="settingsNickname" placeholder="Hva skal folk kalle deg?" /></div>
             </div>
+            <label class="upload-card home-photo-upload" for="settingsHomePhoto">
+              <input id="settingsHomePhoto" class="file-input" type="file" accept="image/*" data-file-name="settingsHomePhotoName" />
+              <span id="settingsHomePhotoPreview" class="upload-icon image-upload-preview">IMG</span>
+              <span>
+                <strong>Bilde av kollektivet</strong>
+                <small id="settingsHomePhotoName">Bilde gjør dashboardet mer personlig</small>
+              </span>
+            </label>
             <div class="settings-section">
               <h3>Moduler</h3>
               <div class="module-grid">
@@ -619,6 +631,7 @@
           <div id="messageList" class="list"></div>
           <div class="input-row">
             <input id="messageText" placeholder="Hva bør alle få med seg?" />
+            <input id="messageReminder" type="datetime-local" aria-label="Dato og tid for kalenderpåminnelse" />
             <button class="btn" data-action="add-message">Send</button>
           </div>
         </section>

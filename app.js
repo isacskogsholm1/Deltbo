@@ -138,6 +138,10 @@ function bindUi() {
   $("roomCount").addEventListener("input", renderCreatePrice);
   $("dashboardViewSelect")?.addEventListener("change", (event) => openTab(event.target.value));
   document.querySelectorAll(".file-input").forEach((input) => input.addEventListener("change", () => updateFileLabel(input)));
+  $("settingsHomePhoto")?.addEventListener("change", () => {
+    const file = $("settingsHomePhoto")?.files?.[0];
+    if (file) renderImagePreview("settingsHomePhotoPreview", { dataUrl: URL.createObjectURL(file) }, "IMG");
+  });
   $("memberForm").addEventListener("submit", addMember);
   $("expenseForm").addEventListener("submit", addExpense);
   $("cleanForm").addEventListener("submit", addCleaningTask);
@@ -205,6 +209,7 @@ function handleClick(event) {
     "toggle-shop": () => updateById("shopping", id, (item) => ({ ...item, done: !item.done })),
     "delete-shop": () => removeById("shopping", id, "Vare fjernet"),
     "delete-message": () => removeById("messages", id, "Beskjed fjernet"),
+    "download-message-calendar": () => downloadMessageCalendar(id),
     "delete-event": () => removeById("events", id, "Hendelse fjernet"),
     "delete-rule": () => removeById("rules", id, "Regel fjernet"),
     "delete-inventory": () => removeById("inventory", id, "Ting fjernet"),
@@ -260,6 +265,7 @@ function normalizeState(savedState) {
 
   return {
     ...merged,
+    home: normalizeHome(merged.home),
     members,
     expenses: normalizeCollection(merged.expenses, (expense) => ({
       id: expense.id ?? uid(),
@@ -285,7 +291,13 @@ function normalizeState(savedState) {
     shopping: normalizeCollection(merged.shopping, (item) => typeof item === "string"
       ? { id: uid(), item, quantity: "", done: false, receipt: null }
       : { id: item.id ?? uid(), item: item.item ?? "Vare", quantity: item.quantity ?? "", done: Boolean(item.done), receipt: normalizeReceipt(item.receipt) }),
-    messages: normalizeCollection(merged.messages, (item) => ({ id: item.id ?? uid(), text: item.text ?? "", author: item.author ?? "Deltbo", createdAt: item.createdAt ?? isoNow() })),
+    messages: normalizeCollection(merged.messages, (item) => ({
+      id: item.id ?? uid(),
+      text: item.text ?? "",
+      author: item.author ?? "Deltbo",
+      remindAt: item.remindAt ?? "",
+      createdAt: item.createdAt ?? isoNow(),
+    })),
     events: normalizeCollection(merged.events, (item) => ({ id: item.id ?? uid(), title: item.title ?? "Hendelse", date: item.date ?? todayPlus(7) })),
     rules: normalizeCollection(merged.rules, (item) => typeof item === "string" ? { id: uid(), text: item } : { id: item.id ?? uid(), text: item.text ?? "" }),
     inventory: normalizeCollection(merged.inventory, (item) => ({ id: item.id ?? uid(), name: item.name ?? "Ting", owner: item.owner ?? "", status: item.status ?? "OK" })),
@@ -318,6 +330,14 @@ function normalizeState(savedState) {
   };
 }
 
+function normalizeHome(home) {
+  if (!home) return null;
+  return {
+    ...home,
+    photo: normalizeMedia(home.photo),
+  };
+}
+
 function normalizeModules(modules) {
   return { ...DEFAULT_MODULES, ...(modules ?? {}) };
 }
@@ -328,10 +348,11 @@ function normalizeNotificationSettings(settings) {
 
 function normalizeMembers(members) {
   const list = normalizeCollection(members, (member) => typeof member === "string"
-    ? { id: uid(), name: member, room: "", role: "member", username: "", password: "", joinedAt: isoNow() }
+    ? { id: uid(), name: member, nickname: "", room: "", role: "member", username: "", password: "", joinedAt: isoNow() }
     : {
         id: member.id ?? uid(),
         name: member.name ?? "Beboer",
+        nickname: member.nickname ?? "",
         room: member.room ?? "",
         role: member.role ?? "member",
         username: member.username ?? "",
@@ -347,12 +368,16 @@ function normalizeCollection(value, mapItem) {
 }
 
 function normalizeReceipt(receipt) {
-  if (!receipt?.dataUrl) return null;
+  return normalizeMedia(receipt, "Kvittering");
+}
+
+function normalizeMedia(media, fallbackName = "Fil") {
+  if (!media?.dataUrl) return null;
   return {
-    name: receipt.name || "Kvittering",
-    type: receipt.type || "application/octet-stream",
-    dataUrl: receipt.dataUrl,
-    addedAt: receipt.addedAt || isoNow(),
+    name: media.name || fallbackName,
+    type: media.type || "application/octet-stream",
+    dataUrl: media.dataUrl,
+    addedAt: media.addedAt || isoNow(),
   };
 }
 
@@ -556,12 +581,13 @@ function createHome(event) {
   }
 
   const inviteToken = createInviteToken(name);
-  const adminMember = { id: uid(), name: adminUser, room: "Rom 1", role: "admin", joinedAt: isoNow() };
+  const adminMember = { id: uid(), name: adminUser, nickname: "", room: "Rom 1", role: "admin", joinedAt: isoNow() };
   const members = [
     adminMember,
     ...firstMembers.map((memberName, index) => ({
       id: uid(),
       name: memberName,
+      nickname: "",
       room: `Rom ${index + 2}`,
       role: "member",
       joinedAt: isoNow(),
@@ -809,6 +835,7 @@ function createInvitePayload(memberName = "") {
     },
     members: state.members.map((member) => ({
       name: member.name,
+      nickname: member.nickname,
       room: member.room,
       role: member.role,
     })),
@@ -879,6 +906,7 @@ function joinHome(event) {
   }
 
   const memberName = value("memberName");
+  const nickname = value("memberNickname");
   const room = value("memberRoom");
   const username = value("memberUsername").toLowerCase();
   const password = $("memberPassword").value;
@@ -919,6 +947,7 @@ function joinHome(event) {
 
   const accountName = invitedMember?.name || memberName;
   setMemberCredentials(accountName, username, password);
+  updateMemberNickname(accountName, nickname);
   saveSession({ role: "member", memberName: accountName, username });
   saveState("Bruker lagret. Velkommen inn");
   openDashboard("member");
@@ -1087,19 +1116,20 @@ function addMember(event) {
   const name = value("memberManualName");
   if (!name) return;
 
-  const result = upsertMember(name, value("memberManualRoom"));
+  const result = upsertMember(name, value("memberManualRoom"), value("memberManualNickname"));
   if (!result.ok) {
     showToast(result.message);
     return;
   }
 
-  clearFields("memberManualName", "memberManualRoom");
+  clearFields("memberManualName", "memberManualNickname", "memberManualRoom");
   saveState("Beboer lagt til");
 }
 
-function upsertMember(name, room = "") {
+function upsertMember(name, room = "", nickname = "") {
   const existing = state.members.find((member) => member.name.toLowerCase() === name.toLowerCase());
   if (existing) {
+    existing.nickname = nickname || existing.nickname || "";
     existing.room = room || existing.room;
     existing.joinedAt = existing.joinedAt || isoNow();
     return { ok: true };
@@ -1110,7 +1140,7 @@ function upsertMember(name, room = "") {
     return { ok: false, message: `Kollektivet har ${capacity} rom totalt. Fjern et medlem eller øk antall rom først.` };
   }
 
-  state.members.push({ id: uid(), name, room: room || nextRoomLabel(), role: "member", joinedAt: isoNow() });
+  state.members.push({ id: uid(), name, nickname, room: room || nextRoomLabel(), role: "member", joinedAt: isoNow() });
   return { ok: true };
 }
 
@@ -1121,6 +1151,13 @@ function setMemberCredentials(name, username, password) {
   member.username = username;
   member.password = password;
   member.accountCreatedAt = member.accountCreatedAt || isoNow();
+}
+
+function updateMemberNickname(name, nickname) {
+  const member = state.members.find((item) => item.name.toLowerCase() === name.toLowerCase());
+  if (!member || !nickname) return;
+
+  member.nickname = nickname;
 }
 
 function isUsernameTaken(username, allowedMemberId = "") {
@@ -1205,24 +1242,34 @@ async function addShoppingItem(event) {
 }
 
 function receiptFromFileInput(id) {
+  return mediaFromFileInput(id, {
+    fallbackName: "Kvittering",
+    maxSize: 900_000,
+    tooLargeMessage: "Kvitteringen er for stor. Bruk et mindre bilde eller PDF under 900 KB.",
+    readErrorMessage: "Kunne ikke lese kvitteringen",
+  });
+}
+
+function mediaFromFileInput(id, options = {}) {
   const file = $(id)?.files?.[0];
   if (!file) return Promise.resolve(null);
 
-  if (file.size > 900_000) {
-    showToast("Kvitteringen er for stor. Bruk et mindre bilde eller PDF under 900 KB.");
+  const maxSize = options.maxSize ?? 1_200_000;
+  if (file.size > maxSize) {
+    showToast(options.tooLargeMessage ?? "Filen er for stor. Bruk et bilde under 1,2 MB.");
     return Promise.resolve(null);
   }
 
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => resolve({
-      name: file.name,
+      name: file.name || options.fallbackName || "Fil",
       type: file.type,
       dataUrl: reader.result,
       addedAt: isoNow(),
     });
     reader.onerror = () => {
-      showToast("Kunne ikke lese kvitteringen");
+      showToast(options.readErrorMessage ?? "Kunne ikke lese filen");
       resolve(null);
     };
     reader.readAsDataURL(file);
@@ -1233,9 +1280,9 @@ function addMessage() {
   const text = value("messageText");
   if (!text) return;
 
-  state.messages.unshift({ id: uid(), text, author: currentUserName(), createdAt: isoNow() });
+  state.messages.unshift({ id: uid(), text, author: currentDisplayName(), remindAt: value("messageReminder"), createdAt: isoNow() });
   addNotification("messages", "normal", "Ny beskjed", text);
-  clearFields("messageText");
+  clearFields("messageText", "messageReminder");
   saveState("Beskjed sendt");
 }
 
@@ -1248,6 +1295,58 @@ function addEvent(event) {
   addNotification(isImportantExpense(title) ? "rent" : "messages", isImportantExpense(title) ? "important" : "normal", "Kalender", `${title} er lagt til i kalenderen.`);
   clearFields("eventTitle", "eventDate");
   saveState("Hendelse lagt til");
+}
+
+function downloadMessageCalendar(id) {
+  const message = state.messages.find((item) => item.id === id);
+  if (!message) return;
+
+  const start = message.remindAt ? new Date(message.remindAt) : defaultMessageReminderDate(message.createdAt);
+  const end = new Date(start.getTime() + 30 * 60 * 1000);
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Deltbo//Important Message//NO",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${message.id}@deltbo.local`,
+    `DTSTAMP:${icsDate(new Date())}`,
+    `DTSTART:${icsDate(start)}`,
+    `DTEND:${icsDate(end)}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT30M",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${icsEscape(message.text)}`,
+    "END:VALARM",
+    `SUMMARY:${icsEscape(`Deltbo: ${message.text.slice(0, 52)}`)}`,
+    `DESCRIPTION:${icsEscape(`${message.text}\\n\\nFra ${message.author || "Deltbo"}.`)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${slugify(message.text || "deltbo-beskjed")}.ics`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(link.href);
+  showToast("Kalenderfil laget");
+}
+
+function defaultMessageReminderDate(createdAt) {
+  const date = new Date(createdAt || Date.now());
+  date.setDate(date.getDate() + 1);
+  date.setHours(9, 0, 0, 0);
+  return date;
+}
+
+function icsDate(date) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function icsEscape(text) {
+  return String(text).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
 
 function addRule(event) {
@@ -1291,22 +1390,33 @@ function addConflict(event) {
   saveState("Anonym sak sendt");
 }
 
-function saveSettings(event) {
+async function saveSettings(event) {
   event.preventDefault();
+
+  const currentMember = getCurrentMember();
+  if (currentMember) currentMember.nickname = value("settingsNickname");
   if (session.role !== "admin" && session.role !== "support") {
-    showToast("Kun admin eller support kan endre innstillinger");
+    saveState("Kallenavn lagret");
     return;
   }
 
+  const uploadedPhoto = await mediaFromFileInput("settingsHomePhoto", {
+    fallbackName: "Kollektivbilde",
+    maxSize: 1_200_000,
+    tooLargeMessage: "Bildet er for stort. Bruk et bilde under 1,2 MB.",
+    readErrorMessage: "Kunne ikke lese bildet",
+  });
   state.home = {
     ...state.home,
     name: value("settingsName"),
     address: value("settingsAddress"),
     rentAmount: Number(value("settingsRent") || 0),
     roomCount: Number(value("settingsRooms") || 1),
+    photo: uploadedPhoto || state.home.photo || null,
   };
   state.modules = readModuleSettings();
   state.notificationSettings = readNotificationSettings();
+  if (uploadedPhoto) clearFields("settingsHomePhoto");
   saveState("Innstillinger lagret");
 }
 
@@ -1556,7 +1666,7 @@ function renderShell() {
 
   const currentMember = getCurrentMember();
   const isSupportView = session.role === "support";
-  const profileName = isSupportView ? "Deltbo support" : currentMember?.name || currentUserName();
+  const profileName = isSupportView ? "Deltbo support" : memberDisplayName(currentMember) || currentUserName();
   const profileRoom = isSupportView ? "Supportvisning" : currentMember?.room || "Kollektiv";
   $("dashName").textContent = state.home.name;
   $("sideName").textContent = state.home.name;
@@ -1575,7 +1685,7 @@ function renderShell() {
       ? "Supportvisning"
       : `Admin • ${state.home.priceNok ?? calculateMonthlyPrice(state.members.length)} kr/mnd`;
   $("inviteButton").classList.toggle("hidden", session.role !== "admin" && session.role !== "support");
-  $("settingsForm").querySelector("button").disabled = session.role !== "admin" && session.role !== "support";
+  $("settingsForm").querySelector("button").disabled = false;
   updateThemeToggle();
   renderModuleVisibility();
 }
@@ -1624,6 +1734,7 @@ function renderHome() {
   const rooms = Number(state.home?.roomCount || state.members.length);
   const openShopping = state.shopping.filter((item) => !item.done).length;
   const items = [
+    homePhotoCard(),
     rowInfo("Rom", `${state.members.length} av ${rooms} rom er fylt`),
     rowInfo("Leie", rentShare),
     state.modules.shopping ? rowInfo("Handleliste", `${openShopping} varer mangler`) : "",
@@ -1665,8 +1776,8 @@ function renderShopping() {
 function renderMessages() {
   $("messageList").innerHTML = emptyOrRows(state.messages, (message) => row({
     title: message.text,
-    meta: `${message.author} • ${formatDateTime(message.createdAt)}`,
-    actions: button("delete-message", message.id, "Slett", "danger"),
+    meta: `${message.author} • ${formatDateTime(message.createdAt)}${message.remindAt ? ` • kalender: ${formatDateTime(message.remindAt)}` : ""}`,
+    actions: `${button("download-message-calendar", message.id, "Legg i kalender", "secondary")}${button("delete-message", message.id, "Slett", "danger")}`,
   }), "Ingen beskjeder enda.");
 }
 
@@ -1748,6 +1859,9 @@ function renderSettings() {
   $("settingsAddress").value = state.home.address ?? "";
   $("settingsRent").value = state.home.rentAmount ?? "";
   $("settingsRooms").value = state.home.roomCount ?? "";
+  $("settingsNickname").value = getCurrentMember()?.nickname ?? "";
+  $("settingsHomePhotoName").textContent = state.home.photo?.name ?? "Bilde gjør dashboardet mer personlig";
+  renderImagePreview("settingsHomePhotoPreview", state.home.photo, "IMG");
   document.querySelectorAll("[data-module-setting]").forEach((input) => {
     input.checked = state.modules?.[input.dataset.moduleSetting] !== false;
   });
@@ -1897,6 +2011,14 @@ function digitsOnly(valueToClean) {
   return String(valueToClean).replace(/\D/g, "");
 }
 
+function slugify(valueToSlug) {
+  return String(valueToSlug)
+    .toLowerCase()
+    .replace(/[^a-z0-9æøå]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "deltbo";
+}
+
 function clearFields(...ids) {
   ids.forEach((id) => {
     const field = $(id);
@@ -1913,6 +2035,14 @@ function splitNames(valueToSplit) {
 
 function currentUserName() {
   return session.memberName || state.home?.adminUser || state.members[0]?.name || "Deltbo";
+}
+
+function currentDisplayName() {
+  return memberDisplayName(getCurrentMember()) || currentUserName();
+}
+
+function memberDisplayName(member) {
+  return member?.nickname || member?.name || "";
 }
 
 function getCurrentMember() {
@@ -1945,8 +2075,24 @@ function emptyOrRows(collection, mapItem, emptyText) {
   return collection.length ? collection.map(mapItem).join("") : `<p class="muted">${emptyText}</p>`;
 }
 
+function homePhotoCard() {
+  if (!state.home?.photo?.dataUrl) return "";
+
+  return `
+    <div class="home-photo-card">
+      <img src="${escapeHtml(state.home.photo.dataUrl)}" alt="${escapeHtml(state.home.name)}" />
+      <div>
+        <span class="muted">Kollektivbilde</span>
+        <strong>${escapeHtml(state.home.name)}</strong>
+      </div>
+    </div>
+  `;
+}
+
 function memberCard(member) {
   const isCurrent = member.name === currentUserName() || member.username === currentUserName();
+  const displayName = memberDisplayName(member);
+  const nicknameMeta = member.nickname ? ` • ${member.name}` : "";
   const status = member.role === "admin"
     ? "Admin"
     : member.username
@@ -1958,14 +2104,31 @@ function memberCard(member) {
 
   return `
     <div class="row member-card ${isCurrent ? "is-current" : ""}">
-      <span class="member-avatar">${escapeHtml(initials(member.name))}</span>
+      <span class="member-avatar">${escapeHtml(initials(displayName))}</span>
       <div class="row-main">
-        <span class="row-title">${escapeHtml(member.name)}</span>
-        <span class="row-meta">${escapeHtml(`${status}${member.room ? ` • ${member.room}` : ""}${isCurrent ? " • deg" : ""}`)}</span>
+        <span class="row-title">${escapeHtml(displayName)}</span>
+        <span class="row-meta">${escapeHtml(`${status}${nicknameMeta}${member.room ? ` • ${member.room}` : ""}${isCurrent ? " • deg" : ""}`)}</span>
       </div>
       <div class="row-actions">${actions}</div>
     </div>
   `;
+}
+
+function renderImagePreview(id, media, fallback) {
+  const preview = $(id);
+  if (!preview) return;
+
+  preview.innerHTML = "";
+  preview.style.backgroundImage = "";
+  if (media?.dataUrl) {
+    preview.style.backgroundImage = `url("${media.dataUrl}")`;
+    preview.textContent = "";
+    preview.classList.add("has-image");
+    return;
+  }
+
+  preview.classList.remove("has-image");
+  preview.textContent = fallback;
 }
 
 function row({ title, meta, actions = "" }) {
